@@ -38,6 +38,9 @@ Tags `vX.Y.Z`; CI builds artifacts on tag; release notes from `CHANGELOG.md`. Ro
 ### D-010 — No copy protection, no telemetry, no network
 Offline plugin. `JUCE_USE_CURL=0`, no analytics. Reduces threat model to local file handling (fuzz-tested, T-013).
 
+### D-011 — Mutation testing opted in (added 2026-10-27, protocol v3.4 amendment)
+Tool: **Mull 0.34.0 line**, version-matched packages `mull-19` + `clang-19` on `ubuntu-latest` (suffix agreement across package, plugin path, and compiler is the known failure mode — K-20261027T123200Z). Scope: `Source/DSP/*` and `Source/Presets/*` only (DSP numerics and preset parsing are where the frozen suite carries correctness). Score target for T-070: **≥ 75% killed on first run, then the measured baseline becomes the floor for future PRs** (per Mull guidance, gates start at baseline, not aspiration). Opt-out path if the toolchain proves unstable: new `D-###` + `TEST_CHALLENGE.md` for T-070 — never a silent skip.
+
 ## Decision rules (if → then) — Rule 3.2
 
 **DR-1 — Dependency/install failure:** If `cmake` configure fails on a pinned version → check `plan/ENVIRONMENT.md` hash pins; retry once with a clean `build/`; if still failing, pin JUCE to the previous patch (8.0.14) and record in `DEVIATIONS.md`. If the JUCE submodule checkout hash ≠ `91ad83ae…` → re-checkout tag 8.0.15; never track `master`, never vendor a copy by hand. If the VST3 SDK submodule is missing → `git submodule update --init --recursive`.

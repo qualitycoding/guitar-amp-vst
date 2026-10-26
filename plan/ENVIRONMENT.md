@@ -11,6 +11,7 @@
 | pluginval | **2.0.0** | `github.com/Tracktion/pluginval` releases | cross-platform VST3/AU validator, strictness levels 1–10, CLI + CI actions |
 | Compilers (CI) | MSVC 2022+ (`windows-latest`), Xcode 15+ clang (`macos-latest`) | GitHub Actions images | JUCE 8.0.12 defaults Projucer to VS2026; CMake path unaffected |
 | Python (test tooling) | 3.11+ | python.org | for IR/preset lint scripts |
+| Mull (mutation testing, S-MUTATE) | **0.34.0 line**, packages `mull-19` + `clang-19` (suffixes must agree) | Mull apt repo / `brew install mull-project/mull/mull` | ubuntu-latest CI job only; flags `-O0 -g -grecord-command-line -fpass-plugin=/usr/lib/mull-ir-frontend-19`; scope `Source/DSP/*,Source/Presets/*`; K-20261027T123200Z |
 | Ableton Live (manual tests) | Live 12 (any edition, 64-bit) | user machine | VST3 supported since Live 10.1; Live is 64-bit only since Live 10 |
 
 ## Setup commands (literal)

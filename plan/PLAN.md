@@ -2,7 +2,8 @@
 
 **Status: READY** (pending A-001 repo push by the human)
 **Profiles:** `software` (`software.deploys = true`)
-**Counts:** claims 8 (verified 5, corroborated 2, single-source 1) · tests 20 (unit/dsp 13, host 2, live 5, security 2, performance 2, operational 1) · steps 20 · gates 3 (G-002, G-003, G-010) · risks 14 (Critical 1 and High 4 → all mitigated or resolved, Medium 7, Low 2) · prior knowledge: store `qualitycoding/knowledge` read at `09f34582…`; 78 items tag-matched, 9 applied (D-001 re-pinned to JUCE 8.0.15; `JUCE_VST3_CAN_REPLACE_VST2=0` added; GUI/CI/packaging hardening), 0 lessons in store · amendments: A-008 (store corrected to `qualitycoding/knowledge`), D-001 (JUCE 8.0.12 → 8.0.15, 9.x forbidden), DR-9 added, S-000 action 4 added, S-002 action 3 added
+**Protocol version:** v3.4 (amended 2026-10-27 from v3.3)
+**Counts:** claims 10 (verified 7, corroborated 2, single-source 1) · tests 21 (unit/dsp 13, host 2, live 5, security 2, performance 2, operational 1, mutation 1) · steps 23 (incl. S-REVIEW, S-ADVERSARIAL, S-MUTATE per protocol 3.8) · gates 3 (G-002, G-003, G-010) · risks 16 (Critical 1 and High 4 → all mitigated or resolved, Medium 8, Low 3) · assumption audit (4.7): 14 items — confirmed 9, falsified 2 (A-008 store, A-009 license — both corrected with lessons), unverifiable 3 (all gated) · prior knowledge: store `qualitycoding/knowledge` read at `09f34582…`; 78 items tag-matched, 9 applied (D-001 re-pinned to JUCE 8.0.15; `JUCE_VST3_CAN_REPLACE_VST2=0` added; GUI/CI/packaging hardening), 0 lessons in store · amendments: A-008 (store corrected), A-009 (GPL-3.0 → AGPL-3.0/Starter per C-009), D-001 (JUCE 8.0.12 → 8.0.15, 9.x forbidden), D-011 (mutation testing opted in), DR-9 added, S-000 action 4 added, S-002 action 3 added, T-070 frozen via 2E.4
 
 Every step follows the Rule 3.1 template. Independent steps may run concurrently unless they share an exclusive resource. The plan begins with S-000 and ends with S-RETRO then S-KNOW.
 
@@ -35,7 +36,7 @@ Every step follows the Rule 3.1 template. Independent steps may run concurrently
 - Depends on: S-000
 - Inputs: `plan/ENVIRONMENT.md`
 - Actions:
-  1. Create the repo skeleton: `CMakeLists.txt`, `Source/`, `tests/`, `.github/workflows/ci.yml`, `LICENSE` (GPL-3.0 per A-009), `README.md`, `.gitignore` (build/, .checkpoints/snapshots excluded from releases but `.checkpoints/` committed).
+  1. Create the repo skeleton: `CMakeLists.txt`, `Source/`, `tests/`, `.github/workflows/ci.yml`, `LICENSE` (**AGPL-3.0** per amended A-009 — or the JUCE Starter-tier path if the human chooses closed-source; record the choice in `DEVIATIONS.md`), `README.md`, `.gitignore` (build/, .checkpoints/snapshots excluded from releases but `.checkpoints/` committed).
   2. Add JUCE as a git submodule pinned to tag 8.0.15: `git submodule add https://github.com/juce-framework/JUCE.git && git -C JUCE checkout 8.0.15`, then verify `git -C JUCE rev-parse HEAD` == `91ad83ae34a81e0833b1a2b0866f54846370ae53`. Evaluate the `8.0.16-security` patch tag (security lens, D-001); if adopted, update the hash pin and record in `DEVIATIONS.md`.
   3. CI workflow: matrix {windows-latest, macos-latest} × {Release}; steps: checkout w/ submodules → configure → build → ctest → freeze-manifest check (`sha256sum -c tests/FROZEN_MANIFEST.sha256`).
 - Outputs: scaffolded repo; green CI on an empty plugin target.
@@ -297,10 +298,66 @@ Every step follows the Rule 3.1 template. Independent steps may run concurrently
 - Lessons applied: none
 - Exclusive resources: none
 
+### S-REVIEW Traditional Code Review (protocol 3.8)
+- Tier: Opus, fresh context (authored none of the code)
+- Profile: software
+- Depends on: S-014
+- Inputs: full diff of the impl branch; frozen suite; `plan/ENVIRONMENT.md` pins
+- Actions:
+  1. Review the entire implementation diff for: bad code and anti-patterns (dead code, duplication, hidden mutation, unclear naming, unjustified complexity); untested code (every new path maps to a frozen test — name coverage gaps); security issues and vulnerabilities (unsafe file handling in preset/IR loaders, bounds in DSP, no secrets, no injection paths); outdated or superseded dependencies (JUCE vs pinned 8.0.15 and the `8.0.16-security` evaluation, pluginval, actions/* versions — compare fixed versions, never "latest").
+  2. Severity-classify every finding per Global Rule 4. Critical/High: fix before S-015 starts; each fix that corrects the implementer's own mistake → lesson (Rule 11). Accepted findings → `R-###` entries.
+- Outputs: `reviews/CODE_REVIEW.md` (every finding linked to a fix commit or an R-ID).
+- Evidence produced: none (gate for later steps)
+- Done when: zero unresolved Critical/High findings; report committed.
+- Checkpoint: completed += S-REVIEW.
+- On failure: fix-and-rerun; a finding that contradicts a frozen test → `TEST_CHALLENGE.md`, never silent test edits.
+- Gate: none
+- Relevant decisions/claims: D-001…D-010
+- Lessons applied: none
+- Exclusive resources: none
+
+### S-ADVERSARIAL Adversarial Review (protocol 3.8)
+- Tier: Opus or Fable (Mythos), fresh context (authored neither code nor plan)
+- Profile: software
+- Depends on: S-014 (may run concurrently with S-REVIEW)
+- Inputs: impl branch, `plan/ASSUMPTIONS.md`, `tests/TEST_SPEC.md`
+- Actions:
+  1. Try to break the plugin: challenge the assumptions the code embodies (A-### expressed in code — smoothing always applied? state restore tolerant? gate hysteresis exploitable into oscillation?); hostile inputs at every boundary (malformed/oversized preset XML and IR files beyond the T-012/T-013 corpus, extreme sample rates and buffer sizes {1, 33, 8192}, parameter sweeps at audio rate, automation during preset load, denormal storms); abuse flows (rapid preset switching while playing, IR swap mid-note, all dials at extremes simultaneously); dependency failure modes (missing IR file on disk, read-only preset dir).
+  2. Every confirmed break → new frozen test via the Phase 2 machinery, or a documented accepted risk with severity. Critical/High breaks block release.
+- Outputs: `reviews/ADVERSARIAL_REVIEW.md`; new tests (if any) added through unfreeze→add→red-verify→re-freeze.
+- Evidence produced: new T-### if breaks confirmed
+- Done when: every confirmed break is either test-covered or an accepted R-###; zero unresolved Critical/High.
+- Checkpoint: completed += S-ADVERSARIAL.
+- On failure: per the default rule; anything touching frozen tests → `TEST_CHALLENGE.md`.
+- Gate: none
+- Relevant decisions/claims: A-007, D-006, D-007, D-010
+- Lessons applied: none
+- Exclusive resources: none
+
+### S-MUTATE Mutation Testing (protocol 3.8, opted in — D-011)
+- Tier: Sonnet
+- Profile: software
+- Depends on: S-014 (may run concurrently with S-REVIEW/S-ADVERSARIAL)
+- Inputs: frozen DSP/preset test binaries; `plan/ENVIRONMENT.md` Mull pins
+- Actions:
+  1. On `ubuntu-latest` CI: install the version-matched pair `mull-19` + `clang-19` (Mull 0.34.0 line); the package suffix, plugin path suffix, and clang version must agree (K-20261027T123200Z).
+  2. Build the ctest suite with `-O0 -g -grecord-command-line -fpass-plugin=/usr/lib/mull-ir-frontend-19` (never a Release build).
+  3. Run `mull-runner-19` scoped with `--include-path "Source/DSP/*,Source/Presets/*"`, excluding `tests/` and `JUCE/` (mutating tests/framework is meaningless).
+  4. Triage survivors: each becomes a new frozen test (Phase 2 machinery) or a written justification grouped by mutant class.
+- Outputs: `reviews/MUTATION.md` (score, per-file breakdown, survivor triage), CI artifact of the Mull report.
+- Evidence produced: T-070
+- Done when: T-070 passes (mutation score ≥ the D-011 target) or every survivor is justified in writing.
+- Checkpoint: completed += S-MUTATE.
+- On failure: if the Mull/clang pairing proves unstable in CI after 2 attempts, record the opt-out as a new `D-###` per protocol 3.8.3 and mark T-070 via `TEST_CHALLENGE.md` (never silently skip a frozen check).
+- Gate: none
+- Relevant decisions/claims: D-011, C-010
+- Lessons applied: none
+- Exclusive resources: CI runner (LLVM toolchain install)
+
 ### S-015 Ableton Live Manual Test Protocol
 - Tier: Opus (execution by human-capable implementer session on a machine with Live 12)
 - Profile: software
-- Depends on: S-014
+- Depends on: S-014, S-REVIEW, S-ADVERSARIAL, S-MUTATE
 - Inputs: T-030–T-034, `plan/GATES.md` G-010
 - Actions:
   1. Execute T-030–T-034 verbatim on Windows and macOS; record each item in `validation/live-test-record.md` (Live version, OS, buffer, result, notes).

@@ -43,10 +43,11 @@ Phase 0.3.6 intake batch. The human was presented with the ambiguities below; un
 **Human correction (intake answer):** The store is **`github.com/qualitycoding/knowledge`**. Read access from the planning environment returned HTTP 404 (private or not yet created — indistinguishable without credentials), so R0 loaded nothing and the absence is recorded per Phase 0.3.7; S-000 re-verifies read access from the implementer's authenticated environment (decision rule DR-9), and S-KNOW pushes to this store after gate G-003 (creating it with the Appendix C layout only if it truly does not exist).
 **Consequence if wrong:** G-003 allows `push-to: <target>`.
 
-## A-009 — Licensing
+## A-009 — Licensing (amended 2026-10-27 by the Phase 4.7 audit)
 **Ambiguity:** Code license.
-**Default adopted:** GPL-3.0 for the repo (JUCE's free tier requires GPL; commercial JUCE license is a future purchasable option). Bundled cabinet IRs must be original captures or CC0; this is a release blocker verified in S-016 (R-006 mitigation).
-**Consequence if wrong:** Buying a JUCE commercial license changes only the license file and CI secrets.
+**Original default (falsified in part):** GPL-3.0, on the premise that JUCE's free tier requires GPL. The audit re-checked the JUCE 8 EULA: JUCE 8 is dual-licensed under the JUCE licence and **AGPLv3** (not GPLv3), and the free **Starter** tier (≤ $20k annual revenue, no splash screen) permits closed-source distribution (K-20261027T123100Z-juce8-licensing; lesson L-20261027T123000Z).
+**Amended default:** **AGPL-3.0** for the repo if open-sourced (matching JUCE 8's copyleft option); alternatively the **Starter tier** allows a free closed-source release under the revenue limit. The human picks at S-001; absent an answer, AGPL-3.0 stands. Bundled cabinet IRs must be original captures or CC0; this is a release blocker verified in S-016 (R-006 mitigation).
+**Consequence if wrong:** Buying a JUCE Indie/Pro licence changes only the license file and CI secrets.
 
 ## A-010 — Performance targets
 **Ambiguity:** CPU/latency budgets.

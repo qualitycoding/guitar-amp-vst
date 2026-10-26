@@ -11,6 +11,9 @@
 | S-7 | JUCE forum: "VST3 parameter updates: automation vs. host refresh" (Oct–Nov 2025 thread) | forum.juce.com/t/vst3-parameter-updates-automation-vs-host-refresh/67373 | C-008 (preset loads via per-param `setValueNotifyingHost`/`performEdit` can spawn unwanted automation tracks in some hosts; Live mentioned; use `beginChangeGesture` discipline and `replaceState` for preset loads) | Community thread w/ experienced devs; treated as corroborated, not verified → D-007 + T-011/T-032 test it directly. Tier 2. |
 | S-8 | GuitarML SmartAmpPro repo (neural amp sim precedent) | github.com/GuitarML/SmartAmpPro | C-007 context (LSTM capture approach exists and works, but adds training pipeline) | Skimmed. Tier 2. Used only to justify deferral, not as a correctness claim. |
 
+| S-9 | JUCE 8 End User Licence Agreement | juce.com/legal/juce-8-licence/ | C-009 (AGPLv3 dual-licence; Starter/Indie/Pro/Educational tiers and limits) | Official legal text. Tier 1. Added 2026-10-27 (assumption audit). |
+| S-10 | Mull documentation (tutorial, install guide, CLI) + README | mull.readthedocs.io; github.com/mull-project/mull | C-010 (0.34.0; mull-19/clang-19 version matching; -fpass-plugin flags; exclusions) | Official docs. Tier 1. Added 2026-10-27 (v3.4 amendment). |
+
 ## Verification notes
 
 - All host-format claims (C-002) come from first-party Ableton documentation — two independent help pages agree.

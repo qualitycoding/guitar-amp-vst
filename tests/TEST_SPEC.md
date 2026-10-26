@@ -3,6 +3,7 @@
 # Freeze protocol: Phase 2E. Hashes in FROZEN_MANIFEST.sha256. Immutability rule 2E.3 applies.
 # Implementers cannot modify, skip, mark expected-failure, or weaken these tests.
 # If a frozen test is found invalid: halt, write TEST_CHALLENGE.md (Phase 2E.4).
+# Amendment 2026-10-27 (protocol v3.4): T-070 added through the 2E.4 machinery (D-011); manifest regenerated.
 
 Categories: unit (juce::UnitTest via ctest), dsp (golden/numeric), host (pluginval), live (manual Ableton protocol), security, performance, operational.
 
@@ -89,6 +90,11 @@ Standalone benchmark harness (`tests/bench/`) renders 60 s of a checked-in DI gu
 
 ### T-051 Latency report
 `getLatencySamples()` == 0 in Eco mode and ≤ 144 samples (≈3 ms @ 48 k) in High mode; reported latency matches the measured impulse delay within ±1 sample for both modes.
+
+## Mutation (added 2026-10-27)
+
+### T-070 Mutation score floor
+Mull run over `Source/DSP/*` and `Source/Presets/*` (per D-011 toolchain): mutation score ≥ 75%, and every surviving mutant either killed by a subsequently added test or carrying a written per-class justification in `reviews/MUTATION.md`. The score is read from the Mull report by CI (no hand-transcription). **Done when:** CI job `mutation` passes and the report artifact is attached.
 
 ## Operational
 

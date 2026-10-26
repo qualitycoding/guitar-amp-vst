@@ -16,9 +16,12 @@
 | SC-10 | No network/telemetry; local file handling only | T-040, T-041 | S-014 |
 | SC-11 | Installers install/scan/run/uninstall cleanly on both OSes | T-060 | S-016 |
 | SC-12 | Release happens only with human sign-off | G-002 record | S-017 |
+| SC-13 | Code passes a traditional review (anti-patterns, untested paths, security, outdated deps) with zero unresolved Critical/High | `reviews/CODE_REVIEW.md` | S-REVIEW |
+| SC-14 | Code survives an adversarial break-attempt; every confirmed break is test-covered or an accepted risk | `reviews/ADVERSARIAL_REVIEW.md` | S-ADVERSARIAL |
+| SC-15 | Test suite meets the mutation-score floor on DSP/preset modules | T-070, `reviews/MUTATION.md` | S-MUTATE |
 
 ## Test → requirement reverse map
 
-T-001→SC-1 · T-002→SC-4 · T-003→SC-4 · T-004→SC-7 · T-005→SC-7 · T-006→SC-2 · T-007→SC-7 · T-008→SC-3 · T-009→SC-6 · T-010→SC-5 · T-011→SC-5 · T-012→SC-7 · T-013→SC-7 · T-020→SC-1/SC-9 · T-021→SC-9 · T-030→SC-1 · T-031→SC-4 · T-032→SC-5 · T-033→SC-6 · T-034→SC-1 · T-040→SC-10 · T-041→SC-10 · T-050→SC-8 · T-051→SC-8 · T-060→SC-11
+T-001→SC-1 · T-002→SC-4 · T-003→SC-4 · T-004→SC-7 · T-005→SC-7 · T-006→SC-2 · T-007→SC-7 · T-008→SC-3 · T-009→SC-6 · T-010→SC-5 · T-011→SC-5 · T-012→SC-7 · T-013→SC-7 · T-020→SC-1/SC-9 · T-021→SC-9 · T-030→SC-1 · T-031→SC-4 · T-032→SC-5 · T-033→SC-6 · T-034→SC-1 · T-040→SC-10 · T-041→SC-10 · T-050→SC-8 · T-051→SC-8 · T-060→SC-11 · T-070→SC-15
 
 Every success criterion has ≥ 1 test; every test maps to ≥ 1 criterion. No N/A-section artifacts are referenced.

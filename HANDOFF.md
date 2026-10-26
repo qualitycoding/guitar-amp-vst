@@ -40,7 +40,7 @@ pluginval validate --strictness-level 5 build/GrimAmp_artefacts/Release/VST3/Gri
 
 ## Step list at a glance
 
-S-000 environment/access verification → S-001 repo & CI scaffold → S-002 JUCE skeleton builds and passes pluginval → S-003 parameter layout (APVTS) → S-004→S-008 DSP chain (gate/boost, preamp, tone stack, power amp, cab IR) → S-009 amp voicings → S-010 GUI → S-011 preset system + factory presets → S-012 automation hardening → S-013 performance/oversampling → S-014 CI validation → S-015 Ableton Live manual test protocol → S-016 packaging → S-017 release prep (gate G-002) → S-RETRO → S-KNOW (gate G-003).
+S-000 environment/access verification → S-001 repo & CI scaffold → S-002 JUCE skeleton builds and passes pluginval → S-003 parameter layout (APVTS) → S-004→S-008 DSP chain (gate/boost, preamp, tone stack, power amp, cab IR) → S-009 amp voicings → S-010 GUI → S-011 preset system + factory presets → S-012 automation hardening → S-013 performance/oversampling → S-014 CI validation → **S-REVIEW / S-ADVERSARIAL / S-MUTATE (code reviews + mutation testing, protocol 3.8, may run concurrently)** → S-015 Ableton Live manual test protocol → S-016 packaging → S-017 release prep (gate G-002) → S-RETRO → S-KNOW (gate G-003).
 
 ## Human gates
 
