@@ -1,0 +1,69 @@
+{
+  "claims": [
+    {
+      "id": "C-001",
+      "statement": "JUCE 8.0.15 (commit 91ad83ae34a81e0833b1a2b0866f54846370ae53) is the final release of the 8.x line and the correct pin for v1; the 9.x line (newest 9.0.4) restructures the VST3 client extension API with 35+ breaking changes and is forbidden for v1. An 8.0.16-security patch tag exists and is evaluated at S-001. (Amended 2026-10-27 from the original '8.0.12 is current', which a live tag listing and knowledge item K-20261004T151500Z showed to be stale.)",
+      "confidence": "verified",
+      "sources": ["S-1", "K-20261004T151500Z-juce-8-vs-9-vst3-breaking-change", "live tag listing api.github.com/repos/juce-framework/JUCE/tags 2026-10-27"],
+      "load_bearing": true,
+      "used_by": ["D-001", "ENVIRONMENT", "R-014"]
+    },
+    {
+      "id": "C-002",
+      "statement": "Ableton Live 12 hosts 64-bit VST3 plugins on Windows and macOS (VST3 support since Live 10.1); AU is macOS-only; AAX is unsupported.",
+      "confidence": "verified",
+      "sources": ["S-2", "S-3", "S-4"],
+      "load_bearing": true,
+      "used_by": ["A-003", "T-030", "S-002", "S-015"]
+    },
+    {
+      "id": "C-003",
+      "statement": "pluginval 2.0.0 validates VST3/AU plugins via CLI at configurable strictness levels and integrates the Steinberg VST3 validator and auval; it provides GitHub Actions composite actions for CI.",
+      "confidence": "verified",
+      "sources": ["S-5"],
+      "load_bearing": true,
+      "used_by": ["T-020", "T-021", "S-014"]
+    },
+    {
+      "id": "C-004",
+      "statement": "JUCE's AudioProcessorValueTreeState exposes parameters to hosts for automation and provides state save/restore via copyState/replaceState; smoothed gain changes via ramps avoid clicks.",
+      "confidence": "verified",
+      "sources": ["S-6"],
+      "load_bearing": true,
+      "used_by": ["D-005", "D-006", "S-003"]
+    },
+    {
+      "id": "C-005",
+      "statement": "JUCE builds VST3, AU, and Standalone targets from one CMake project definition.",
+      "confidence": "corroborated",
+      "sources": ["S-1", "S-5"],
+      "load_bearing": true,
+      "used_by": ["D-001", "S-002"]
+    },
+    {
+      "id": "C-006",
+      "statement": "Staged waveshaping with pre/de-emphasis filtering under oversampling, plus IR-based cabinet convolution, is a standard, proven architecture for non-neural guitar amp simulation spanning clean to high-gain tones.",
+      "confidence": "corroborated",
+      "sources": ["S-8"],
+      "load_bearing": true,
+      "used_by": ["D-002", "D-003", "D-004"]
+    },
+    {
+      "id": "C-007",
+      "statement": "Full circuit (WDF) modeling of 7 topologies or a neural-capture (NAM/LSTM) pipeline exceeds a solo developer's v1 budget; a parametric engine can ship first with a neural stage added later behind the same interface.",
+      "confidence": "single-source",
+      "sources": ["planner domain assessment; S-8 for neural precedent"],
+      "load_bearing": true,
+      "used_by": ["A-004", "D-003", "R-002"]
+    },
+    {
+      "id": "C-008",
+      "statement": "In JUCE VST3 plugins, loading presets via per-parameter setValueNotifyingHost/performEdit can cause hosts (Ableton Live among them) to record spurious automation; preset loads should use replaceState, and GUI edits should use begin/endChangeGesture.",
+      "confidence": "corroborated",
+      "sources": ["S-7"],
+      "load_bearing": true,
+      "used_by": ["D-007", "T-011", "T-032"]
+    }
+  ],
+  "summary": { "verified": 5, "corroborated": 2, "single_source": 1, "inferred": 0 }
+}
