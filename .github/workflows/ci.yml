@@ -67,7 +67,7 @@ jobs:
         if: runner.os == 'macOS'
         uses: Tracktion/pluginval/validate@v2.0.0-beta3
         with:
-          plugins: ~/Library/Audio/Plug-Ins/Components/GrimAmp.component
+          plugins: /Users/runner/Library/Audio/Plug-Ins/Components/GrimAmp.component
           strictness-level: 5
           pluginval-version: v2.0.0-beta3
           args: --timeout-ms 180000
