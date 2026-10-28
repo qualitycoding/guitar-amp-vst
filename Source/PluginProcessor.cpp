@@ -478,7 +478,7 @@ juce::AudioProcessorEditor* GrimAmpAudioProcessor::createEditor()
 int GrimAmpAudioProcessor::getNumPrograms()    { return 1; }
 int GrimAmpAudioProcessor::getCurrentProgram() { return 0; }
 void GrimAmpAudioProcessor::setCurrentProgram (int) {}
-const juce::String GrimAmpAudioProcessor::getProgramName (int) { return {}; }
+const juce::String GrimAmpAudioProcessor::getProgramName (int) { return "Default"; }
 void GrimAmpAudioProcessor::changeProgramName (int, const juce::String&) {}
 
 void GrimAmpAudioProcessor::getStateInformation (juce::MemoryBlock& destData)
