@@ -54,11 +54,20 @@ jobs:
           pluginval-version: v2.0.0-beta3
           args: --timeout-ms 180000
 
+      - name: Register AU (macOS only)
+        if: runner.os == 'macOS'
+        run: |
+          mkdir -p ~/Library/Audio/Plug-Ins/Components
+          cp -R build/GrimAmp_artefacts/${{ matrix.config }}/AU/GrimAmp.component ~/Library/Audio/Plug-Ins/Components/
+          codesign --force --deep -s - ~/Library/Audio/Plug-Ins/Components/GrimAmp.component
+          killall -9 AudioComponentRegistrar 2>/dev/null || true
+          auval -a | grep -i grim || true
+
       - name: pluginval strictness 5 (AU, macOS only)
         if: runner.os == 'macOS'
         uses: Tracktion/pluginval/validate@v2.0.0-beta3
         with:
-          plugins: ${{ github.workspace }}/build/GrimAmp_artefacts/${{ matrix.config }}/AU/GrimAmp.component
+          plugins: ~/Library/Audio/Plug-Ins/Components/GrimAmp.component
           strictness-level: 5
           pluginval-version: v2.0.0-beta3
           args: --timeout-ms 180000
