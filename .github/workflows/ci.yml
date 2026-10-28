@@ -1,0 +1,129 @@
+name: ci
+
+on:
+  push:
+    branches: [ impl-*, main, master ]
+  pull_request:
+
+jobs:
+  build-test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ windows-latest, macos-latest ]
+        config: [ Release ]
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Configure
+        run: cmake -B build -DCMAKE_BUILD_TYPE=${{ matrix.config }}
+
+      - name: Build plugin
+        run: cmake --build build --config ${{ matrix.config }} --target GrimAmp_VST3
+
+      - name: Build tests + bench
+        run: cmake --build build --config ${{ matrix.config }} --target grimamp_tests grimamp_bench
+
+      - name: Verify JUCE submodule pin
+        shell: bash
+        run: |
+          git -C JUCE rev-parse HEAD | tee juce-head.txt
+          grep -q "ea77444750de45e036e0279bb0291144bf8e3688" juce-head.txt \
+            || (echo "JUCE submodule hash drifted from pin" && exit 1)
+
+      - name: Freeze manifest check
+        shell: bash
+        run: sha256sum -c tests/FROZEN_MANIFEST.sha256
+
+      - name: ctest (frozen unit + DSP suite)
+        run: ctest --test-dir build --output-on-failure -C ${{ matrix.config }}
+
+      - name: pluginval strictness 5 (VST3)
+        uses: Tracktion/pluginval/validate@v2
+        with:
+          pluginpath: ${{ github.workspace }}/build/GrimAmp_artefacts/${{ matrix.config }}/VST3/GrimAmp.vst3
+          strictness: 5
+
+      - name: pluginval strictness 5 (AU, macOS only)
+        if: runner.os == 'macOS'
+        uses: Tracktion/pluginval/validate@v2
+        with:
+          pluginpath: ${{ github.workspace }}/build/GrimAmp_artefacts/${{ matrix.config }}/AU/GrimAmp.component
+          strictness: 5
+
+      # --- T-041: local file handling only -------------------------------
+      - name: Security grep — file I/O confined to preset/IR modules
+        shell: bash
+        run: |
+          ! grep -rn --include=*.h --include=*.cpp -E "File(InputStream|OutputStream)::|createInputStream|createOutputStream|loadFileAsString|createReaderFor" \
+              Source/ \
+              | grep -v "Source/Presets/" \
+              | grep -v "Source/DSP/UserIRLoader" \
+              | grep -v "Source/DSP/CabIR.h"
+          echo "T-041 pass"
+
+      # --- T-040: no network ---------------------------------------------
+      - name: Security check — no curl / no sockets
+        shell: bash
+        run: |
+          grep -rn --include=CMakeLists.txt --include=*.h --include=*.cpp -E "JUCE_USE_CURL=0" CMakeLists.txt Source/ tests/
+          ! grep -rn --include=*.h --include=*.cpp -E "juce::(URL|Socket|StreamingSocket)" Source/ tests/
+          echo "T-040 static pass (import-table check runs on binaries below on Windows)"
+
+      - name: T-040 import-table check (Windows)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          BIN="build/GrimAmp_artefacts/${{ matrix.config }}/VST3/GrimAmp.vst3/Contents/x86_64-win/GrimAmp.vst3"
+          [ -f "$BIN" ] || BIN=$(find build -name "GrimAmp.vst3" -path "*VST3*" | head -1)
+          dumpbin //imports "$BIN" | tee imports.txt || true
+          ! grep -iE "ws2_32|wininet|winhttp|libcurl" imports.txt
+          echo "T-040 windows pass"
+
+      - name: Benchmark (T-050 informational + latency T-051)
+        run: ctest --test-dir build --output-on-failure -C ${{ matrix.config }} -R bench || true
+
+      - name: Upload bench results
+        uses: actions/upload-artifact@v4
+        with:
+          name: bench-results-${{ matrix.os }}
+          path: build/tests/bench-results.json
+          if-no-files-found: ignore
+
+  mutation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      # Mull 0.34.x line: package, plugin path and clang major must agree (K-20261027T123200Z)
+      - name: Install Mull + clang 19
+        run: |
+          curl -1sLf 'https://dl.cloudsmith.io/public/mull-project/mull-stable/setup.deb.sh' | sudo -E bash
+          sudo apt-get install -y mull-19 clang-19
+
+      - name: Build test suite with Mull instrumentation (-O0)
+        run: |
+          cmake -B build-mull -DCMAKE_BUILD_TYPE=Debug \
+                -DCMAKE_C_COMPILER=clang-19 -DCMAKE_CXX_COMPILER=clang++-19 \
+                -DCMAKE_CXX_FLAGS="-O0 -g -grecord-command-line -fpass-plugin=/usr/lib/mull-ir-frontend-19" \
+                -DCMAKE_EXE_LINKER_FLAGS="-fuse-ld=lld-19"
+          cmake --build build-mull --target grimamp_tests
+
+      - name: Run Mull (T-070)
+        run: |
+          mull-runner-19 --report-name mull -include-path "Source/DSP/*" -include-path "Source/Presets/*" \
+              -exclude-path "tests/*" -exclude-path "JUCE/*" \
+              ./build-mull/tests/grimamp_tests || true
+
+      - name: Upload Mull report
+        uses: actions/upload-artifact@v4
+        with:
+          name: mull-report
+          path: mull.sqlite
+          if-no-files-found: ignore

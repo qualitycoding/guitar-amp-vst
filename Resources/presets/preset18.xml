@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Parameters name="Modern Prog Lead" genre="prog" grimampPresetVersion="1">
+  <PARAM id="input-gain" value="0.0"/>
+  <PARAM id="gate-on" value="1"/>
+  <PARAM id="gate-threshold" value="-60.0"/>
+  <PARAM id="boost-on" value="1"/>
+  <PARAM id="boost-amount" value="0.5"/>
+  <PARAM id="drive" value="0.6"/>
+  <PARAM id="bass" value="0.45"/>
+  <PARAM id="mid" value="0.65"/>
+  <PARAM id="treble" value="0.65"/>
+  <PARAM id="presence" value="0.7"/>
+  <PARAM id="depth" value="0.5"/>
+  <PARAM id="sag" value="0.5"/>
+  <PARAM id="amp-voicing" value="4"/>
+  <PARAM id="cab-ir" value="5"/>
+  <PARAM id="oversampling" value="1"/>
+  <PARAM id="mic-position" value="0.25"/>
+  <PARAM id="ir-mix" value="1.0"/>
+  <PARAM id="post-eq-on" value="0"/>
+  <PARAM id="post-eq-low" value="0.0"/>
+  <PARAM id="post-eq-high" value="0.0"/>
+  <PARAM id="master" value="0.7"/>
+</Parameters>
