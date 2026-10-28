@@ -47,6 +47,7 @@ jobs:
         with:
           plugins: ${{ github.workspace }}/build/GrimAmp_artefacts/${{ matrix.config }}/VST3/GrimAmp.vst3
           strictness-level: 5
+          pluginval-version: v2.0.0-beta3
 
       - name: pluginval strictness 5 (AU, macOS only)
         if: runner.os == 'macOS'
@@ -54,6 +55,7 @@ jobs:
         with:
           plugins: ${{ github.workspace }}/build/GrimAmp_artefacts/${{ matrix.config }}/AU/GrimAmp.component
           strictness-level: 5
+          pluginval-version: v2.0.0-beta3
 
       # --- T-041: local file handling only -------------------------------
       - name: Security grep — file I/O confined to preset/IR modules
