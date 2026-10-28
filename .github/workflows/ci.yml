@@ -25,6 +25,10 @@ jobs:
       - name: Build plugin
         run: cmake --build build --config ${{ matrix.config }} --target GrimAmp_VST3
 
+      - name: Build AU (macOS only)
+        if: runner.os == 'macOS'
+        run: cmake --build build --config ${{ matrix.config }} --target GrimAmp_AU
+
       - name: Build tests + bench
         run: cmake --build build --config ${{ matrix.config }} --target grimamp_tests grimamp_bench
 
@@ -48,6 +52,7 @@ jobs:
           plugins: ${{ github.workspace }}/build/GrimAmp_artefacts/${{ matrix.config }}/VST3/GrimAmp.vst3
           strictness-level: 5
           pluginval-version: v2.0.0-beta3
+          args: --timeout-ms 180000
 
       - name: pluginval strictness 5 (AU, macOS only)
         if: runner.os == 'macOS'
@@ -56,6 +61,7 @@ jobs:
           plugins: ${{ github.workspace }}/build/GrimAmp_artefacts/${{ matrix.config }}/AU/GrimAmp.component
           strictness-level: 5
           pluginval-version: v2.0.0-beta3
+          args: --timeout-ms 180000
 
       # --- T-041: local file handling only -------------------------------
       - name: Security grep — file I/O confined to preset/IR modules
