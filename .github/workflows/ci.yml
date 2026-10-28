@@ -105,7 +105,7 @@ jobs:
       - name: Install Mull + clang 19
         run: |
           curl -1sLf 'https://dl.cloudsmith.io/public/mull-project/mull-stable/setup.deb.sh' | sudo -E bash
-          sudo apt-get install -y mull-19 clang-19 lld-19
+          sudo apt-get install -y mull-19 clang-19 lld-19 libasound2-dev libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libxext-dev libfreetype-dev libfontconfig1-dev libgl1-mesa-dev
 
       - name: Build test suite with Mull instrumentation (-O0)
         run: |
