@@ -29,7 +29,52 @@ exact inverses) and the measured delay is the true processing latency —
 0 samples in Eco (zero-latency convolution, D-004), 4–5 samples in High
 (oversampling), matching the reported values within the ±1-sample bound.
 
-## T-050 CPU budget (INFORMATIONAL — CI is authoritative)
+## T-050 CPU budget — CI runner results (authoritative)
+
+`grimamp_bench --bench` on the GitHub-hosted runners, 60 s DI render, 48 kHz / 256-sample
+blocks, all 7 voicings x both modes, from the `bench-results-<os>` artifacts of two CI runs on
+branch `impl-run-20261027T120000Z-guitar-amp-vst`:
+
+- run 40771992301 (before the noise-gate fix, D-001m)
+- run 40898109414 (after it, with the gate now actually attenuating)
+
+Runners: `windows-latest` (AMD EPYC, 4 cpus; the processor model differed between runs: 9V74
+then 7763) and `macos-latest` (Apple M1 virtual, 3 cpus). Budget: worst case (Frost, High)
+<= 15 % of one core.
+
+High oversampling, mean CPU % of one core:
+
+| Voicing | Windows 40771992301 | Windows 40898109414 | macOS 40771992301 | macOS 40898109414 |
+|---|---|---|---|---|
+| Tweed | 10.8 | 13.3 | 25.7 | 17.0 |
+| Plexi | 11.0 | 13.5 | 26.1 | 17.4 |
+| JCM800 | 11.5 | 13.7 | 31.6 | 18.0 |
+| Recto | 11.3 | 14.1 | 35.6 | 18.3 |
+| 5150 | 11.4 | 14.1 | 18.0 | 17.6 |
+| Chainsaw | 11.6 | 14.5 | 18.3 | 17.8 |
+| Frost | 11.7 | 14.5 | 18.7 | 17.3 |
+
+Eco mode: Windows 1.7–1.8 % / 2.4–3.3 %, macOS 1.4–3.1 % / 1.3–1.5 % (runs in the
+order above) — far inside the budget everywhere.
+
+### Verdicts
+
+- **Eco: PASS** on both runners.
+- **High, Windows: PASS in both runs** (worst case Frost/High 11.7 % then 14.5 %), but the
+  second run is within 0.5 points of the budget, so the margin is thin and varies with the
+  runner hardware lottery (different EPYC model, different gate behaviour).
+- **High, macOS: over budget in the first run (18.0–35.6 %, Frost/High 18.7 %), 17.0–18.3 % in
+  the second** — still above 15 % on every voicing. The shared virtual M1 is noisy (the first
+  run's Recto/High was twice the second's), but even the better run misses the budget.
+- **Decision (D-001n, maintainer, 2026-10-30):** leave the DSP and the budget as they are; the
+  bench step stays informational and the macOS miss is recorded, not fixed. The 15 % figure is
+  therefore a pass on Windows runners and a known, accepted miss on macOS virtual hardware.
+- **>20 % regression gate: not evaluated.** It needs a baseline from `main`; no `main` bench
+  artifact exists yet. Until one does, the check cannot fail.
+
+The T-051 latency verdicts are identical in both CI runs (Eco 0/0, High 4/5, both PASS).
+
+## T-050 sandbox numbers (historical, informational)
 
 60 s DI render, 48 kHz / 256-sample blocks, all 7 voicings × both modes:
 
