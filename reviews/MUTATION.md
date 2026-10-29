@@ -32,8 +32,9 @@ bug (D-001m: the noise gate never attenuated).
 Boost.h:50, CabIR.h:191, PresetManager.cpp:168 (`<=` and `>=`), :246. The extra iteration reads
 or writes one element past the end (or, for the preset loops, a child index that does not
 exist and is ignored by `hasType`). It is undefined behaviour that a functional test cannot
-observe without a sanitizer. Justification: equivalent without ASan; covered by the JUCE
-leak/bounds checks only in debug builds. *Follow-up:* run the suite under ASan in a later job.
+observe without a sanitizer. Justification: not observable by a functional test. Covered instead by the CI job `sanitize`
+(ASan + UBSan over the fast subset and the T-013 fuzz corpus), which fails on an out-of-bounds
+access; no sanitizer finding in run 40923201129.
 
 **B. Boundary comparisons where the boundary value is a measure-zero input (`>` ↔ `>=`) — 14.**
 NoiseGate.h:71, 78, 83, 90, 93; Preamp.h:68, 69; PowerAmp.h:62; CabIR.h:37, 54, 102, 138 (×2);

@@ -146,6 +146,15 @@ jobs:
               boost_reference gate_reference tonestack_reference poweramp_reference \
               cabir_selection userir_loader preset_list 2>&1 | tee asan.log
 
+      - name: Fuzz presets under sanitizers (T-013 corpus, seed 42)
+        env:
+          ASAN_OPTIONS: detect_leaks=0:abort_on_error=0:halt_on_error=1
+          UBSAN_OPTIONS: print_stacktrace=1:halt_on_error=1
+        run: |
+          python3 tests/fuzz_preset.py --seed 42 --count 1000 --out-dir build-asan/fuzz_corpus \
+              --seed-preset Resources/presets/preset01.xml
+          GRIMAMP_FUZZ_DIR=$PWD/build-asan/fuzz_corpus ./build-asan/tests/grimamp_tests fuzz_presets 2>&1 | tee -a asan.log
+
   mutation:
     runs-on: ubuntu-latest
     steps:
