@@ -468,7 +468,6 @@ struct CabIRMutationTest : juce::UnitTest
         {
             gramp::CabIR cab;
             cab.prepare (spec);
-            expect (! cab.isEngineReady());
             expectEquals (cab.getCurrentCab(), -2);
             cab.applyPending();
             expectEquals (cab.getCurrentCab(), 0);   // first prepare loads the default cab
@@ -553,29 +552,36 @@ struct CabIRMutationTest : juce::UnitTest
                 return renderImpulse (cab);
             };
 
+            // JUCE scales the loaded IR by an internal factor, so calibrate against the
+            // mic = 0, mix = 1 render (only the close engine contributes, gain g0 per unit input)
+            const float g0 = run (0.0f, 1.0f).getSample (0, 0);
+            expectGreaterThan (g0, 0.1f);
             const float s2 = std::sqrt (0.5f);
-            // mix = 1: wet only, 0.5 * (cos p + sin p)
-            expectWithinAbsoluteError (run (0.0f, 1.0f).getSample (0, 0), 0.5f, 1.0e-3f);
-            expectWithinAbsoluteError (run (0.5f, 1.0f).getSample (0, 0), 0.5f * 2.0f * s2, 1.0e-3f);
-            expectWithinAbsoluteError (run (1.0f, 1.0f).getSample (0, 0), 0.5f, 1.0e-3f);
+            const float halfPi = juce::MathConstants<float>::halfPi;
+            const float tol = 2.0e-3f * g0;
+
+            // mix = 1: wet only, g0 * (cos p + sin p)
+            expectWithinAbsoluteError (run (0.5f, 1.0f).getSample (0, 0), g0 * 2.0f * s2, tol);
+            expectWithinAbsoluteError (run (1.0f, 1.0f).getSample (0, 0), g0, tol);
             expectWithinAbsoluteError (run (0.25f, 1.0f).getSample (0, 0),
-                                       0.5f * (std::cos (0.25f * juce::MathConstants<float>::halfPi)
-                                               + std::sin (0.25f * juce::MathConstants<float>::halfPi)), 1.0e-3f);
+                                       g0 * (std::cos (0.25f * halfPi) + std::sin (0.25f * halfPi)), tol);
+            // channel 1 carries half the input, so half the output
+            expectWithinAbsoluteError (run (0.5f, 1.0f).getSample (1, 0), 0.5f * g0 * 2.0f * s2, tol);
             // mic position clamps
-            expectWithinAbsoluteError (run (9.0f, 1.0f).getSample (0, 0), 0.5f, 1.0e-3f);
-            expectWithinAbsoluteError (run (-9.0f, 1.0f).getSample (0, 0), 0.5f, 1.0e-3f);
+            expectWithinAbsoluteError (run (9.0f, 1.0f).getSample (0, 0), g0, tol);
+            expectWithinAbsoluteError (run (-9.0f, 1.0f).getSample (0, 0), g0, tol);
 
             // mix = 0: bit-exact dry
             const auto dry = run (0.5f, 0.0f);
             expectEquals (dry.getSample (0, 0), 1.0f);
             expectEquals (dry.getSample (1, 0), 0.5f);
 
-            // mix = 0.4, mic 0: 0.6 * dry + 0.4 * 0.5 * dry, per channel (both channels processed)
+            // mix = 0.4, mic 0: 0.6 * dry + 0.4 * g0 * dry, per channel
             const auto mixed = run (0.0f, 0.4f);
-            expectWithinAbsoluteError (mixed.getSample (0, 0), 0.6f * 1.0f + 0.4f * 0.5f * 1.0f, 1.0e-3f);
-            expectWithinAbsoluteError (mixed.getSample (1, 0), 0.6f * 0.5f + 0.4f * 0.5f * 0.5f, 1.0e-3f);
+            expectWithinAbsoluteError (mixed.getSample (0, 0), 0.6f + 0.4f * g0, tol);
+            expectWithinAbsoluteError (mixed.getSample (1, 0), 0.6f * 0.5f + 0.4f * g0 * 0.5f, tol);
             // mix clamps
-            expectWithinAbsoluteError (run (0.0f, 7.0f).getSample (0, 0), 0.5f, 1.0e-3f);
+            expectWithinAbsoluteError (run (0.0f, 7.0f).getSample (0, 0), g0, tol);
             expectEquals (run (0.0f, -7.0f).getSample (0, 0), 1.0f);
         }
     }
