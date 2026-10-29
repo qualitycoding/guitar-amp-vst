@@ -155,7 +155,7 @@ struct GateReference
             const float envDb = juce::Decibels::gainToDecibels (envelope, -120.0f);
             if (open) { if (envDb < thrClose) open = false; }
             else      { if (envDb > thrDb)    open = true;  }
-            const float thrLin = juce::Decibels::decibelsToGain (thrClose, 1.0e-6f);
+            const float thrLin = juce::Decibels::decibelsToGain (thrClose);
             float target = 1.0f;
             if (! open && envelope < thrLin)
                 target = juce::jlimit (0.0f, 1.0f, envelope / juce::jmax (1.0e-6f, thrLin));

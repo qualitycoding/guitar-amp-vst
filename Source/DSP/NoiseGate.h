@@ -85,7 +85,7 @@ public:
             }
 
             // downward-expander target: unity above threshold, deep cut below
-            const float thrLinear = juce::Decibels::decibelsToGain (thrCloseDb, 1.0e-6f);
+            const float thrLinear = juce::Decibels::decibelsToGain (thrCloseDb);
             float target = 1.0f;
             if (! gateOpen && envelope < thrLinear)
                 target = juce::jlimit (0.0f, 1.0f, envelope / juce::jmax (1.0e-6f, thrLinear));

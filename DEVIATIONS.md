@@ -157,3 +157,15 @@ state_restore, smoothing, gestures and ir_loading, and omits silence (T-004), de
 and fuzz_presets (T-013, needs the ctest-generated corpus). Mutants only those omitted tests
 would kill are counted as survivors, so the score is conservative. The frozen tests are not
 modified. The 75 % floor is enforced by `--mutation-score-threshold 75`.
+
+## D-001m — product bug found by mutation testing: the noise gate never attenuated
+
+`NoiseGate::processBlock` computed `juce::Decibels::decibelsToGain (thrCloseDb, 1.0e-6f)`. The
+second parameter of that JUCE function is `minusInfinityDb`, not a linear floor; with a
+positive value every realistic threshold maps to 0, so `envelope < thrLinear` was never true,
+the expander target stayed at 1 and the gate passed audio unchanged at every threshold
+setting. Found while writing `gate_reference` (T-070 work): a quiet passage 24 dB under the
+threshold came out unattenuated. Fixed by using the default `minusInfinityDb`. The frozen
+tests did not detect it. Note also: the 5 ms RMS window in the design text is implemented as a
+4096-sample box (`fifoSize`, `winLen` is computed but unused); left as is and covered by the
+reference test, flagged for the maintainers.
