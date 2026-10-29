@@ -147,3 +147,13 @@ only the two previously logged test-side implementation fixes (D-001f).
 
 `getProgramName` returned `""`; the Steinberg VST3 validator (run inside pluginval, not by the
 local suite) rejects it ("Programlist 000->Program 000: has no name"). Now returns `"Default"`.
+
+## D-001l — T-070 runs the fast subset of the frozen suite
+
+Mull re-runs the test executable once per mutant. The full suite takes 12.5 min per run under
+the `-O0` Mull instrumentation, which is unworkable. The `mutation` job therefore runs
+skeleton, param_inventory, param_ranges, sine_sanity, harmonics, preset_roundtrip,
+state_restore, smoothing, gestures and ir_loading, and omits silence (T-004), denormals (T-007)
+and fuzz_presets (T-013, needs the ctest-generated corpus). Mutants only those omitted tests
+would kill are counted as survivors, so the score is conservative. The frozen tests are not
+modified. The 75 % floor is enforced by `--mutation-score-threshold 75`.
