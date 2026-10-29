@@ -132,15 +132,19 @@ jobs:
                 -DCMAKE_EXE_LINKER_FLAGS="-fuse-ld=lld-19"
           cmake --build build-mull --target grimamp_tests
 
-      - name: Run Mull (T-070)
+      - name: Count mutants (dry run)
+        run: |
+          mull-runner-19 --dry-run --reporters IDE --timeout 900000 --minimum-timeout 120000 \
+              ./build-mull/tests/grimamp_tests 2>&1 | tee mull-dry.log | tail -5
+
+      - name: Run Mull (T-070, floor 75 %)
+        timeout-minutes: 300
         run: |
           set -o pipefail
-          mull-runner-19 --help || true
           mull-runner-19 --report-name mull --reporters SQLite --reporters IDE \
+              --workers 4 --timeout 900000 --minimum-timeout 120000 \
+              --mutation-score-threshold 75 --allow-surviving \
               ./build-mull/tests/grimamp_tests 2>&1 | tee mull.log
-          score=$(grep -oE 'Mutation score: [0-9]+' mull.log | grep -oE '[0-9]+' | tail -1)
-          echo "Mutation score: ${score:-none}%  (floor 75%)"
-          test -n "$score" && test "$score" -ge 75
 
       - name: Upload Mull report
         if: always()
@@ -150,4 +154,5 @@ jobs:
           path: |
             mull.sqlite
             mull.log
+            mull-dry.log
           if-no-files-found: ignore
