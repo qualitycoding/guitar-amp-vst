@@ -117,3 +117,33 @@ only the two previously logged test-side implementation fixes (D-001f).
   nonzero drive, which would be a spec contradiction for the maintainers.
 - **Also:** factory IR loads now use `Convolution::Trim::yes` so the real S-016 IRs
   cannot introduce unreported onset delay (no-op for the current delta placeholders).
+
+## D-001i — pluginval pinned to v2.0.0-beta3 (highest published release)
+
+- **Plan pin:** pluginval 2.0.0 (plan/ENVIRONMENT.md).
+- **Adopted:** `v2.0.0-beta3`, both as the `Tracktion/pluginval/validate` action ref and as
+  its `pluginval-version` input.
+- **Rationale:** no stable 2.0.0 exists; the only 2.x releases are betas, and beta3 is the
+  newest published release (`gh api repos/Tracktion/pluginval/releases`, checked
+  2026-10-29). The action's default binary (beta1) aborts on macOS with a missing
+  `librtcheck.dylib`, so the binary is pinned explicitly. The `@v2` action ref in the first
+  CI draft did not resolve (no such tag). Re-pin to 2.0.0 when it is released.
+
+## D-001j — CI environment additions (not product changes)
+
+- `lld-19` added to the Mull job (`-fuse-ld=lld-19` needs it).
+- JUCE Linux dev packages (ALSA, X11 family, freetype, fontconfig, GL) added to the Mull job:
+  juceaide must build on the Ubuntu runner.
+- pluginval per-test timeout raised to 180 s (`--timeout-ms 180000`): the Windows runner's
+  VST3 validator exceeded the 30 s default.
+- macOS: the AU target is built explicitly and the component is copied to
+  `~/Library/Audio/Plug-Ins/Components`, ad-hoc signed and registered before pluginval.
+- `.gitattributes` `tests/** text eol=lf`: the freeze manifest hashes bytes, so CRLF checkouts
+  broke `sha256sum -c` on Windows.
+- Mull is configured through `mull.yml` (the runner has no `--include-path` flag); the CI step
+  no longer ignores failures and enforces the 75 % floor (T-070) from the printed score.
+
+## D-001k — product bug found by CI: empty program name
+
+`getProgramName` returned `""`; the Steinberg VST3 validator (run inside pluginval, not by the
+local suite) rejects it ("Programlist 000->Program 000: has no name"). Now returns `"Default"`.

@@ -134,13 +134,20 @@ jobs:
 
       - name: Run Mull (T-070)
         run: |
-          mull-runner-19 --report-name mull -include-path "Source/DSP/*" -include-path "Source/Presets/*" \
-              -exclude-path "tests/*" -exclude-path "JUCE/*" \
-              ./build-mull/tests/grimamp_tests || true
+          set -o pipefail
+          mull-runner-19 --help || true
+          mull-runner-19 --report-name mull --reporters SQLite --reporters IDE \
+              ./build-mull/tests/grimamp_tests 2>&1 | tee mull.log
+          score=$(grep -oE 'Mutation score: [0-9]+' mull.log | grep -oE '[0-9]+' | tail -1)
+          echo "Mutation score: ${score:-none}%  (floor 75%)"
+          test -n "$score" && test "$score" -ge 75
 
       - name: Upload Mull report
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: mull-report
-          path: mull.sqlite
+          path: |
+            mull.sqlite
+            mull.log
           if-no-files-found: ignore

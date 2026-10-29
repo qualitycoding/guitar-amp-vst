@@ -1,0 +1,10 @@
+# Mull mutation-testing config (T-070). Paths are regexes matched against source paths.
+mutators:
+  - cxx_default
+includePaths:
+  - 'Source/DSP/.*'
+  - 'Source/Presets/.*'
+excludePaths:
+  - 'tests/.*'
+  - 'JUCE/.*'
+  - '.*/_deps/.*'
