@@ -111,6 +111,41 @@ jobs:
           path: build/tests/bench-results.json
           if-no-files-found: ignore
 
+  sanitize:
+    # AddressSanitizer + UBSan over the fast test subset: catches the off-by-one and
+    # out-of-bounds reads that mutation testing cannot distinguish (reviews/MUTATION.md).
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install JUCE Linux dev packages
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libasound2-dev libx11-dev libxrandr-dev libxinerama-dev \
+              libxcursor-dev libxext-dev libfreetype-dev libfontconfig1-dev libgl1-mesa-dev
+
+      - name: Build tests with ASan + UBSan
+        run: |
+          cmake -B build-asan -DCMAKE_BUILD_TYPE=Debug \
+                -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ \
+                -DCMAKE_CXX_FLAGS="-O1 -g -fno-omit-frame-pointer -fsanitize=address,undefined -fno-sanitize-recover=undefined" \
+                -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=address,undefined"
+          cmake --build build-asan --target grimamp_tests
+
+      - name: Run tests under sanitizers
+        env:
+          ASAN_OPTIONS: detect_leaks=0:abort_on_error=0:halt_on_error=1
+          UBSAN_OPTIONS: print_stacktrace=1:halt_on_error=1
+        run: |
+          ./build-asan/tests/grimamp_tests \
+              skeleton param_inventory param_ranges sine_sanity harmonics preset_roundtrip \
+              state_restore smoothing gestures ir_loading \
+              boost_reference gate_reference tonestack_reference poweramp_reference \
+              cabir_selection userir_loader preset_list 2>&1 | tee asan.log
+
   mutation:
     runs-on: ubuntu-latest
     steps:
