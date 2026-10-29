@@ -169,3 +169,12 @@ threshold came out unattenuated. Fixed by using the default `minusInfinityDb`. T
 tests did not detect it. Note also: the 5 ms RMS window in the design text is implemented as a
 4096-sample box (`fifoSize`, `winLen` is computed but unused); left as is and covered by the
 reference test, flagged for the maintainers.
+
+## D-001n — macOS High-oversampling CPU accepted as-is (T-050)
+
+CI run 40771992301 (virtual Apple M1 runner, 3 cpus) measured High oversampling at
+18.0–35.6 % CPU per voicing against the 15 % budget (Frost/High 18.69 %); Eco was 1.4–3.1 %.
+Windows (AMD EPYC, 4 cpus) passed every voicing (High 10.8–11.7 %). Decision (maintainer,
+2026-10-30): keep the DSP and the budget unchanged; the bench step stays informational and the
+macOS figures are recorded as a known miss on shared virtual hardware, not optimised.
+`validation/performance.md` should cite both runners' numbers and this decision.
