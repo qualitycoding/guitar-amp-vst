@@ -145,7 +145,8 @@ jobs:
               ./build-mull/tests/grimamp_tests \
               skeleton param_inventory param_ranges sine_sanity harmonics preset_roundtrip \
               state_restore smoothing gestures ir_loading \
-              boost_reference gate_reference tonestack_reference poweramp_reference 2>&1 | tee mull.log
+              boost_reference gate_reference tonestack_reference poweramp_reference \
+              cabir_selection userir_loader preset_list 2>&1 | tee mull.log
 
       - name: Mutation score gate (T-070, floor 75 %)
         run: |

@@ -12,7 +12,12 @@
 #include <cmath>
 #include <vector>
 
+#include <juce_audio_formats/juce_audio_formats.h>
+
+#include "TestSupport.h"
 #include "DSP/Boost.h"
+#include "DSP/CabIR.h"
+#include "DSP/UserIRLoader.h"
 #include "DSP/NoiseGate.h"
 #include "DSP/PowerAmp.h"
 #include "DSP/ToneStack.h"
@@ -383,43 +388,318 @@ struct PowerAmpMutationTest : juce::UnitTest
             expectGreaterThan (diff, 1.0e-3f);
         }
 
-        beginTest ("thump shelf gain follows the envelope");
+        beginTest ("thump shelf gain follows the envelope (exact)");
         {
             const auto& row = gramp::voicings[3];
             gramp::PowerAmp pa;
             pa.prepare (kRate, row);
             pa.setSag (1.0f);
-            const int n = 128;
-            auto in = sine (n, 80.0, 0.9f);
-            // warm up the envelope
-            for (int rep = 0; rep < 20; ++rep)
-            {
-                auto tmp = in;
-                pa.process (tmp.data(), n);
-            }
-            auto ch0 = in;
-            pa.process (ch0.data(), n);
-            const float env = pa.getEnvelope();
 
+            auto drive = sine (3000, 80.0, 0.9f);
+            pa.process (drive.data(), (int) drive.size());
+            const float env = pa.getEnvelope();
+            const float gainDb = juce::jlimit (0.0f, 6.0f, row.sagAmount * 1.0f * env * 8.0f);
+            expectGreaterThan (gainDb, 0.05f);
+
+            const int n = 128;
+            const auto in = sine (n, 80.0, 0.5f);
             juce::AudioBuffer<float> buf (2, n);
             for (int ch = 0; ch < 2; ++ch)
-                buf.copyFrom (ch, 0, ch0.data(), n);
+                buf.copyFrom (ch, 0, in.data(), n);
             juce::dsp::AudioBlock<float> block (buf);
-
-            // reference filter state is unknown after the warm-up (state is private),
-            // so compare against a bounded-gain expectation instead of exact samples:
-            // the shelf only boosts lows by 0..6 dB.
-            const float before = [&] { float e = 0; for (float s : ch0) e += s * s; return e; }();
             pa.processThump (block, 1.0f);
-            float after = 0.0f;
+
+            Filter ref;
+            ref.coefficients = Coeffs::makeLowShelf (kRate, 110.0, 0.7071f, juce::Decibels::decibelsToGain (gainDb));
+            float maxErr = 0.0f;
             for (int i = 0; i < n; ++i)
-                after += buf.getSample (0, i) * buf.getSample (0, i);
-            const float gainDb = juce::jlimit (0.0f, 6.0f, row.sagAmount * env * 8.0f);
-            expectGreaterThan (env, 0.1f);
-            expectGreaterThan (gainDb, 0.0f);
-            expectGreaterThan (after, before * 0.8f);
-            expectLessThan (after, before * juce::Decibels::decibelsToGain (2.0f * 6.0f));
+                maxErr = juce::jmax (maxErr, std::abs (ref.processSample (in[(size_t) i]) - buf.getSample (0, i)));
+            expectLessThan (maxErr, kTol);
         }
+    }
+};
+
+
+// ------------------------------------------------------------ cab IR
+struct CabIRMutationTest : juce::UnitTest
+{
+    CabIRMutationTest() : juce::UnitTest ("cabir_selection") {}
+
+    static void pumpUntilReady (gramp::CabIR& cab, int maxBlocks = 2000)
+    {
+        juce::AudioBuffer<float> scratch (2, 256);
+        for (int i = 0; i < maxBlocks && ! cab.isEngineReady(); ++i)
+        {
+            cab.applyPending();
+            juce::AudioBuffer<float> b (2, 256);
+            b.clear();
+            juce::dsp::AudioBlock<float> blk (b);
+            cab.process (blk, scratch);
+            juce::Thread::sleep (2);
+        }
+    }
+
+    static juce::AudioBuffer<float> deltaIr (float value)
+    {
+        juce::AudioBuffer<float> ir (1, 1);
+        ir.setSample (0, 0, value);
+        return ir;
+    }
+
+    // renders a stereo impulse (ch0 impulse 1.0, ch1 impulse 0.5) through the cab
+    static juce::AudioBuffer<float> renderImpulse (gramp::CabIR& cab)
+    {
+        juce::AudioBuffer<float> scratch (2, 256), b (2, 256);
+        b.clear();
+        b.setSample (0, 0, 1.0f);
+        b.setSample (1, 0, 0.5f);
+        juce::dsp::AudioBlock<float> blk (b);
+        cab.process (blk, scratch);
+        return b;
+    }
+
+    void runTest() override
+    {
+        using gramp::cab::factoryCount;
+        using gramp::cab::userSlotIndex;
+        const juce::dsp::ProcessSpec spec { kRate, 256, 2 };
+
+        beginTest ("engine readiness is false until an IR is applied");
+        {
+            gramp::CabIR cab;
+            cab.prepare (spec);
+            expect (! cab.isEngineReady());
+            expectEquals (cab.getCurrentCab(), -2);
+            cab.applyPending();
+            expectEquals (cab.getCurrentCab(), 0);   // first prepare loads the default cab
+            pumpUntilReady (cab);
+            expect (cab.isEngineReady());
+            expectGreaterThan (cab.getEngineIrSize(), 0);
+        }
+
+        beginTest ("factory selection is applied, clamped and survives re-prepare");
+        {
+            gramp::CabIR cab;
+            cab.prepare (spec);
+            cab.applyPending();
+            cab.selectCab (3);
+            cab.applyPending();
+            expectEquals (cab.getCurrentCab(), 3);
+            cab.selectCab (1000);
+            cab.applyPending();
+            expectEquals (cab.getCurrentCab(), factoryCount - 1);
+            cab.selectCab (-5);
+            cab.applyPending();
+            expectEquals (cab.getCurrentCab(), 0);
+            cab.selectCab (2);
+            cab.applyPending();
+            cab.prepare (spec);
+            cab.applyPending();
+            expectEquals (cab.getCurrentCab(), 2);
+        }
+
+        beginTest ("user slot without a user IR keeps the last factory cab");
+        {
+            gramp::CabIR cab;
+            cab.prepare (spec);
+            cab.applyPending();
+            cab.selectCab (4);
+            cab.applyPending();
+            cab.selectCab (userSlotIndex);
+            expect (! cab.isUserPending());
+            cab.applyPending();
+            expectEquals (cab.getCurrentCab(), 4);
+            expect (! cab.hasUserIr());
+        }
+
+        beginTest ("user IR becomes current, re-prepare re-queues it, factory select cancels it");
+        {
+            gramp::CabIR cab;
+            cab.prepare (spec);
+            cab.applyPending();
+            cab.setUserImpulseResponse (deltaIr (0.5f), kRate);
+            expect (cab.hasUserIr());
+            expect (cab.isUserPending());
+            cab.applyPending();
+            expectEquals (cab.getCurrentCab(), -1);
+            expect (! cab.isUserPending());
+
+            cab.prepare (spec);                      // rate change path
+            expect (cab.isUserPending());
+            cab.applyPending();
+            expectEquals (cab.getCurrentCab(), -1);
+
+            cab.selectCab (5);
+            expect (! cab.isUserPending());
+            cab.applyPending();
+            expectEquals (cab.getCurrentCab(), 5);
+
+            cab.selectCab (userSlotIndex);           // valid user IR now exists
+            expect (cab.isUserPending());
+        }
+
+        beginTest ("mic position and mix shape the wet/dry output (user IR 0.5 on both engines)");
+        {
+            const auto run = [&] (float mic, float mix)
+            {
+                gramp::CabIR cab;
+                cab.prepare (spec);
+                cab.applyPending();
+                cab.setUserImpulseResponse (deltaIr (0.5f), kRate);
+                cab.applyPending();
+                pumpUntilReady (cab);
+                cab.setMicPosition (mic);
+                cab.setMix (mix);
+                return renderImpulse (cab);
+            };
+
+            const float s2 = std::sqrt (0.5f);
+            // mix = 1: wet only, 0.5 * (cos p + sin p)
+            expectWithinAbsoluteError (run (0.0f, 1.0f).getSample (0, 0), 0.5f, 1.0e-3f);
+            expectWithinAbsoluteError (run (0.5f, 1.0f).getSample (0, 0), 0.5f * 2.0f * s2, 1.0e-3f);
+            expectWithinAbsoluteError (run (1.0f, 1.0f).getSample (0, 0), 0.5f, 1.0e-3f);
+            expectWithinAbsoluteError (run (0.25f, 1.0f).getSample (0, 0),
+                                       0.5f * (std::cos (0.25f * juce::MathConstants<float>::halfPi)
+                                               + std::sin (0.25f * juce::MathConstants<float>::halfPi)), 1.0e-3f);
+            // mic position clamps
+            expectWithinAbsoluteError (run (9.0f, 1.0f).getSample (0, 0), 0.5f, 1.0e-3f);
+            expectWithinAbsoluteError (run (-9.0f, 1.0f).getSample (0, 0), 0.5f, 1.0e-3f);
+
+            // mix = 0: bit-exact dry
+            const auto dry = run (0.5f, 0.0f);
+            expectEquals (dry.getSample (0, 0), 1.0f);
+            expectEquals (dry.getSample (1, 0), 0.5f);
+
+            // mix = 0.4, mic 0: 0.6 * dry + 0.4 * 0.5 * dry, per channel (both channels processed)
+            const auto mixed = run (0.0f, 0.4f);
+            expectWithinAbsoluteError (mixed.getSample (0, 0), 0.6f * 1.0f + 0.4f * 0.5f * 1.0f, 1.0e-3f);
+            expectWithinAbsoluteError (mixed.getSample (1, 0), 0.6f * 0.5f + 0.4f * 0.5f * 0.5f, 1.0e-3f);
+            // mix clamps
+            expectWithinAbsoluteError (run (0.0f, 7.0f).getSample (0, 0), 0.5f, 1.0e-3f);
+            expectEquals (run (0.0f, -7.0f).getSample (0, 0), 1.0f);
+        }
+    }
+};
+
+// ------------------------------------------------------------ user IR loader
+struct UserIrLoaderMutationTest : juce::UnitTest
+{
+    UserIrLoaderMutationTest() : juce::UnitTest ("userir_loader") {}
+
+    static juce::File writeWav (const juce::String& name, double rate, int length, bool ramp = true)
+    {
+        auto file = juce::File::getSpecialLocation (juce::File::tempDirectory).getChildFile (name);
+        file.deleteFile();
+        juce::WavAudioFormat wav;
+        std::unique_ptr<juce::AudioFormatWriter> w (
+            wav.createWriterFor (file.createOutputStream().release(), rate, 1, 16, {}, 0));
+        juce::AudioBuffer<float> b (1, length);
+        for (int i = 0; i < length; ++i)
+            b.setSample (0, i, ramp ? 0.5f * (float) i / (float) length : 0.25f);
+        w->writeFromAudioSampleBuffer (b, 0, length);
+        return file;
+    }
+
+    static bool waitForBuffer (gramp::UserIRLoader& l, juce::AudioBuffer<float>& out, double& rate)
+    {
+        for (int i = 0; i < 1500; ++i)
+        {
+            if (l.takeLoadedBuffer (out, rate))
+                return true;
+            juce::Thread::sleep (4);
+        }
+        return false;
+    }
+
+    void runTest() override
+    {
+        beginTest ("same-rate file is passed through untouched");
+        {
+            const auto f = writeWav ("grimamp_mut_same.wav", 48000.0, 1000);
+            gramp::UserIRLoader l;
+            l.loadFileAsync (f, 48000.0, nullptr);
+            juce::AudioBuffer<float> out;
+            double rate = 0.0;
+            expect (waitForBuffer (l, out, rate));
+            expectEquals (rate, 48000.0);
+            expectEquals (out.getNumSamples(), 1000);
+            expectWithinAbsoluteError (out.getSample (0, 500), 0.25f, 1.0e-3f);
+            expectWithinAbsoluteError (out.getSample (1, 500), 0.25f, 1.0e-3f);   // mono is mirrored
+            expectWithinAbsoluteError (out.getSample (0, 999), 0.5f * 0.999f, 1.0e-3f);
+            f.deleteFile();
+        }
+
+        beginTest ("a rate difference of exactly 1 Hz is not resampled");
+        {
+            const auto f = writeWav ("grimamp_mut_1hz.wav", 48001.0, 1000);
+            gramp::UserIRLoader l;
+            l.loadFileAsync (f, 48000.0, nullptr);
+            juce::AudioBuffer<float> out;
+            double rate = 0.0;
+            expect (waitForBuffer (l, out, rate));
+            expectEquals (out.getNumSamples(), 1000);
+            expectWithinAbsoluteError (out.getSample (0, 500), 0.25f, 1.0e-3f);
+            f.deleteFile();
+        }
+
+        beginTest ("a half-rate file is resampled to twice the length");
+        {
+            const auto f = writeWav ("grimamp_mut_half.wav", 24000.0, 1000);
+            gramp::UserIRLoader l;
+            l.loadFileAsync (f, 48000.0, nullptr);
+            juce::AudioBuffer<float> out;
+            double rate = 0.0;
+            expect (waitForBuffer (l, out, rate));
+            expectEquals (rate, 48000.0);
+            expectEquals (out.getNumSamples(), 2000);
+            f.deleteFile();
+        }
+
+        beginTest ("a missing file never produces a buffer");
+        {
+            gramp::UserIRLoader l;
+            l.loadFileAsync (juce::File::getSpecialLocation (juce::File::tempDirectory)
+                                 .getChildFile ("grimamp_mut_does_not_exist.wav"),
+                             48000.0, nullptr);
+            juce::AudioBuffer<float> out;
+            double rate = 0.0;
+            juce::Thread::sleep (300);
+            expect (! l.takeLoadedBuffer (out, rate));
+        }
+    }
+};
+
+// ------------------------------------------------------------ preset list
+struct PresetListMutationTest : juce::UnitTest
+{
+    PresetListMutationTest() : juce::UnitTest ("preset_list") {}
+
+    void runTest() override
+    {
+        beginTest ("factory list has exactly 24 named entries; out-of-range lookups are empty");
+        GrimAmpAudioProcessor proc;
+        auto& pm = proc.getPresetManager();
+
+        int factory = 0, lastFactoryIndex = -1;
+        for (int i = 0; i < pm.getNumPresets(); ++i)
+        {
+            const auto info = pm.getPresetInfo (i);
+            if (info.isFactory)
+            {
+                ++factory;
+                lastFactoryIndex = info.factoryIndex;
+                expect (info.name.isNotEmpty());
+            }
+        }
+        expectEquals (factory, 24);
+        expectEquals (lastFactoryIndex, 23);
+
+        const auto past = pm.getPresetInfo (pm.getNumPresets());
+        expect (past.name.isEmpty());
+        expect (past.factoryIndex == -1);
+        expect (pm.getPresetInfo (-1).name.isEmpty());
+        expect (pm.getPresetInfo (0).name.isNotEmpty());
+        expect (pm.getPresetInfo (pm.getNumPresets() - 1).name.isNotEmpty());
     }
 };
 
@@ -427,4 +707,7 @@ BoostMutationTest tm1;
 NoiseGateMutationTest tm2;
 ToneStackMutationTest tm3;
 PowerAmpMutationTest tm4;
+CabIRMutationTest tm5;
+UserIrLoaderMutationTest tm6;
+PresetListMutationTest tm7;
 } // namespace
