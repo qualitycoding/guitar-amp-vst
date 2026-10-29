@@ -19,6 +19,7 @@ endif()
 add_executable (grimamp_tests
     TestMain.cpp
     UnitTests.cpp
+    MutationTests.cpp
 )
 
 target_include_directories (grimamp_tests PRIVATE
@@ -64,6 +65,7 @@ add_dependencies (grimamp_bench GrimAmpBinaryData)
 set (GRIMAMP_UNIT_TESTS
     skeleton param_inventory param_ranges silence sine_sanity harmonics
     denormals preset_roundtrip state_restore smoothing gestures ir_loading
+    boost_reference gate_reference tonestack_reference poweramp_reference
 )
 
 foreach (t ${GRIMAMP_UNIT_TESTS})
