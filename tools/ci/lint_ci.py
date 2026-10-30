@@ -62,6 +62,49 @@ def lint_root(root):
     return problems
 
 
+BUILTINS = {"set", "test", "if", "fi", "then", "else", "echo", "mkdir", "cp", "cd", "export", "exit", "[", "tee",
+            "grep", "git", "curl", "sudo", "!", "for", "do", "done", "cat", "ls", "{", "}", "(", ")", "||", "&&", "python3",
+            "python", "PY", "import", "rows", "total", "survived", "score", "if", "print", "sys.exit", "#"}
+
+
+def ledger_check(root):
+    """Every external tool invoked in a run block must be named in research/COMMAND_VERIFICATION.md."""
+    ledger = (root / "research" / "COMMAND_VERIFICATION.md").read_text()
+    missing = set()
+    for f in sorted((root / ".github" / "workflows").glob("*.yml")):
+        lines = f.read_text().splitlines()
+        i = 0
+        while i < len(lines):
+            m = re.match(r"(\s*)(-\s+)?run:\s*(\|?)\s*(.*)$", lines[i])
+            if not m:
+                i += 1
+                continue
+            indent = len(m.group(1)) + (len(m.group(2)) if m.group(2) else 0)
+            body = [m.group(4)] if m.group(4) and m.group(3) != "|" else []
+            j = i + 1
+            while j < len(lines) and (not lines[j].strip() or len(lines[j]) - len(lines[j].lstrip()) > indent):
+                body.append(lines[j].strip()); j += 1
+            in_py = False
+            cont = False
+            for l in body:
+                was_cont, cont = cont, l.endswith("\\")
+                if was_cont:
+                    continue
+                if l.startswith("python3 - <<"):
+                    in_py = True
+                    continue
+                if in_py:
+                    in_py = l != "PY"
+                    continue
+                tok = re.split(r"[\s=]", l, maxsplit=1)[0] if l else ""
+                tok = tok.strip("\\")
+                if tok and not tok.startswith(("#", "$", "-", "'", '"', "./", "[", "ASAN", "UBSAN", "GRIMAMP")) \
+                        and tok not in BUILTINS and tok not in ledger:
+                    missing.add(f"{f.name}: {tok}")
+            i = j
+    return sorted(missing)
+
+
 def selftest():
     bad = "steps:\n  - run: make || true\n  - run: |\n      ./t | tee log\n  - continue-on-error: true\n  - run: set +e\n"
     good = "steps:\n  - run: |\n      set -o pipefail\n      ./t | tee log\n  - shell: bash\n    run: |\n      ./t | tee log\n"
@@ -74,6 +117,11 @@ def selftest():
 def main(argv):
     if "--selftest" in argv:
         return selftest()
+    if "--ledger" in argv:
+        root = pathlib.Path(".")
+        miss = ledger_check(root)
+        print("\n".join(f"not in ledger: {m}" for m in miss) or "ledger covers every tool invoked in CI")
+        return 1 if miss else 0
     root = pathlib.Path(argv[argv.index("--root") + 1]) if "--root" in argv else pathlib.Path(".")
     problems = lint_root(root)
     print("\n".join(problems) or "lint_ci: no failure-swallowing idioms")

@@ -139,5 +139,32 @@
     "K-20261027T123100Z-juce8-licensing",
     "K-20261027T123200Z-mull-mutation-testing"
   ],
-  "updated_at": "2026-10-27T12:40:00Z"
+  "updated_at": "2026-10-31T00:00:00Z",
+  "execution_environments": [
+    {
+      "name": "generation/implementation sandbox",
+      "class": "ephemeral",
+      "evidence": "plan/ENVIRONMENT.md section 0.1 (round 1, D-001o): /tmp wiped between turns, exec bits stripped, background jobs reaped, no outbound network",
+      "probed": "2026-10-28..2026-10-31"
+    },
+    {
+      "name": "Claude cloud/remote amendment session",
+      "class": "stable",
+      "evidence": "2026-10-31 probe: scratch files and downloaded CI artifacts created in /tmp in earlier turns of this session were still present; git push/ls-remote to github.com succeed; no container recycling observed over the session. 1.5 protections N/A here; Rule 6 push cadence active.",
+      "probed": "2026-10-31"
+    }
+  ],
+  "amendment_rounds": [
+    {
+      "round": 1,
+      "commit": "abdc2a9",
+      "plan": "reviews/PROTOCOL_CONFORMANCE_v36.md"
+    },
+    {
+      "round": 2,
+      "plan": "plan/AMENDMENT_PLAN_v36_r2.md",
+      "protocol_version": "v3.6",
+      "skills_head": "b361dab"
+    }
+  ]
 }

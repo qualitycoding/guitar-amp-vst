@@ -138,6 +138,9 @@ jobs:
       - name: Lint workflows for failure-swallowing idioms
         run: python3 tools/ci/lint_ci.py
 
+      - name: Every CI tool is in the command-verification ledger (1.3.6)
+        run: python3 tools/ci/lint_ci.py --ledger
+
   sanitize:
     # AddressSanitizer + UBSan over the fast test subset: catches the off-by-one and
     # out-of-bounds reads that mutation testing cannot distinguish (reviews/MUTATION.md).

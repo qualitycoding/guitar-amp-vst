@@ -36,9 +36,14 @@ were made with `gh api` on 2026-10-31.
 | `python3 tools/ci/lint_ci.py [--selftest]`, `python3 tools/ci/check_bench.py [--selftest]` | self-tests run locally on 2026-10-31 (9 cases, all ok); CI confirmation in section 4 |
 | `gh run ...`, `gh api ...` (operator-side, not in plan) | n/a |
 
-## 3. Unverifiable invocations
+## 3. Unverified invocations (explicit spike + decision rule, 1.3.6 item 4)
 
-None remain. The one command in `plan/ENVIRONMENT.md` that diverged from CI reality was the macOS
+`.github/workflows/release.yml` (`hdiutil`, `mv`, `powershell` packaging commands) has never run:
+the release path is behind gate G-002 and is untouched by this run. Rule: the first action of
+step S-014/S-017 is a dry-run of `release.yml` on a throwaway tag in a fork; if any command fails
+there, fix it before the G-002 request, and log the substitution in `DEVIATIONS.md`.
+
+Otherwise none remain. The one command in `plan/ENVIRONMENT.md` that diverged from CI reality was the macOS
 AU `pluginval validate ... AU/GrimAmp.component` line, which fails with "No types found" unless
 the component is first copied, signed and registered; `plan/ENVIRONMENT.md` now says so.
 
