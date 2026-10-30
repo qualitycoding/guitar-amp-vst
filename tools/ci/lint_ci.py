@@ -98,7 +98,7 @@ def ledger_check(root):
                     continue
                 tok = re.split(r"[\s=]", l, maxsplit=1)[0] if l else ""
                 tok = tok.strip("\\")
-                if tok and not tok.startswith(("#", "$", "-", "'", '"', "./", "[", "ASAN", "UBSAN", "GRIMAMP")) \
+                if tok and not re.fullmatch(r"[A-Z][A-Z0-9_]*", tok) and not tok.startswith(("#", "$", "-", "'", '"', "./", "[", "ASAN", "UBSAN", "GRIMAMP")) \
                         and tok not in BUILTINS and tok not in ledger:
                     missing.add(f"{f.name}: {tok}")
             i = j

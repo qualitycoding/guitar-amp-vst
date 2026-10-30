@@ -248,3 +248,11 @@ Plan: `plan/AMENDMENT_PLAN_v36_r2.md`. Substitutions and additions, logged as th
 - **Not done, named:** `S-REVIEW` and `S-ADVERSARIAL` (protocol 3.8, in the v3.4 plan) were never
   executed: `reviews/` holds only MUTATION.md and the conformance review. They need fresh-context
   reviewers. See RETROSPECTIVE.md section 2.
+
+### D-001q addendum — T-040 had never run on Windows
+
+Removing the `|| true` from the dumpbin step (D-001p) exposed `dumpbin: command not found` (exit
+127, run 41144187118). The import-table check (T-040) had therefore passed vacuously in every
+earlier run. The step now finds `dumpbin.exe` in the Visual Studio installation and fails if it is
+missing or produces no output. Whether the forbidden-import grep then passes is determined by the
+next CI run; a real finding there is a product or security issue, not a CI problem.
