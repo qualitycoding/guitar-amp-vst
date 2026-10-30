@@ -99,7 +99,12 @@ jobs:
           # Rule 14 (D-001p): no swallowed failures — a missing binary or a failed
           # dumpbin must fail the step, not vacuously pass the grep below.
           [ -n "$BIN" ] && [ -f "$BIN" ] || { echo "VST3 binary not found"; exit 1; }
-          dumpbin //imports "$BIN" | tee imports.txt
+          # dumpbin is not on PATH in Git Bash on the runner; locate it in the VS installation.
+          DUMPBIN=$(find "/c/Program Files/Microsoft Visual Studio" "/c/Program Files (x86)/Microsoft Visual Studio" \
+              -ipath "*Hostx64/x64/dumpbin.exe" 2>/dev/null | sort | tail -1)
+          [ -n "$DUMPBIN" ] || { echo "dumpbin.exe not found in the Visual Studio installation"; exit 1; }
+          "$DUMPBIN" //imports "$BIN" | tee imports.txt
+          [ -s imports.txt ] || { echo "dumpbin produced no output"; exit 1; }
           ! grep -iE "ws2_32|wininet|winhttp|libcurl" imports.txt
           echo "T-040 windows pass"
 

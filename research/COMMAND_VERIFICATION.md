@@ -28,7 +28,7 @@ were made with `gh api` on 2026-10-31.
 | `Tracktion/pluginval/validate@v2.0.0-beta3` inputs `plugins`, `strictness-level`, `args`, `pluginval-version` | `validate/action.yml` at the tag (K-20261029T030000Z); CI run 40769139053 |
 | pluginval CLI `validate`, `--strictness-level`, `--timeout-ms` (default 30000), `--skip-gui-tests` | `docs/Command line options.md` at `v2.0.0-beta3` (read 2026-10-31) |
 | macOS AU: `codesign --force --deep -s -`, `pgrep -x`/`killall -9 AudioComponentRegistrar`, copy to `~/Library/Audio/Plug-Ins/Components` | CI run 40771992301 (K-20261029T030500Z); the `pgrep` guard form is exercised by the next CI run (see section 4) |
-| `dumpbin //imports "$BIN"` (Windows, Git Bash) | CI run 40898109414; failure now fails the step (D-001p) |
+| `dumpbin //imports "$BIN"` (Windows, Git Bash) | **No evidence before round 2:** the old step ended in `\|\| true`, and `dumpbin: command not found` (exit 127, run 41144187118) was hidden, so T-040 had never actually run on Windows. The step now locates `dumpbin.exe` under the Visual Studio install with `find`; confirmation pending the next run (section 4). |
 | `mull-runner-19 --workers --timeout --minimum-timeout --reporters SQLite IDE --report-name --allow-surviving` | `mull-runner-19 --help` captured in CI run 40843193060 (K-20261029T030100Z); used in run 40898109414 |
 | `mull.yml` (`mutators`, `includePaths`, `excludePaths`) | "Using config .../mull.yml" in the run 40843193060 log; part of the Mull pin |
 | `clang -fsanitize=address,undefined -fno-sanitize-recover=undefined`, `ASAN_OPTIONS=detect_leaks=0:halt_on_error=1` | CI run 40925278824 (K-20261029T030700Z) |
