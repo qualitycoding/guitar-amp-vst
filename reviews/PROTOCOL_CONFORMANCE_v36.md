@@ -27,7 +27,7 @@ sonic-destruction-vst run (16+ container recycles; ASan build never completed).
 | Item | Status | Evidence |
 |---|---|---|
 | Substitutions logged as deviations | **DONE** | D-001 (JUCE re-pin), D-001a–D-001h (implementation), D-001i (pluginval → v2.0.0-beta3), D-001j (CI environment additions), D-001k (program name bug), D-001l (Mull fast subset), D-001m (gate bug), D-001n (macOS T-050 human decision) |
-| Mutation job must be able to fail | **DONE** | `mutation` job enforces the 75 % floor from the SQLite report (`sys.exit(0 if score >= 75.0 else 1)`); score 77.9 % on run 40771992301; `reviews/MUTATION.md` committed |
+| Mutation job must be able to fail | **DONE** | `mutation` job enforces the 75 % floor from the SQLite report (`sys.exit(0 if score >= 75.0 else 1)`); score 77.9 % on run 40898109414; `reviews/MUTATION.md` committed |
 | Budget check gates or is human-relaxed with a recorded decision | **DONE (human-relaxed, recorded)** | D-001n: maintainer decision 2026-10-30 keeps DSP and budget unchanged; macOS virtual-M1 figures (18.0–35.6 % vs 15 %) recorded as a known miss; bench step stays informational |
 | Regression baseline for T-050 | **OPEN — residual, named** | No committed baseline. Recipe recorded in §5 below; deliberately NOT bootstrapped in this amendment because D-001n (the recorded human decision) keeps the step informational — re-gating belongs to the maintainer who signed D-001n. Recorded here so it is not silently absent. |
 | Per-environment targets | **DONE (partially) / FIXED here** | D-001c named the sandbox as non-CI-class; D-001n recorded both runner classes' numbers. The per-class **target table** is added to `plan/ENVIRONMENT.md` by this amendment. |
@@ -115,3 +115,7 @@ No unlogged substitution remains.
 | `knowledge/K-20261031T000000Z-ephemeral-sandbox-invariants.md` | candidate knowledge item (dedupe on apply) |
 
 See `APPLY.md` in this package for the exact application procedure.
+
+---
+
+**Correction, 2026-10-31 (amendment round 2, A-1):** §2 originally attributed the 77.9 % mutation score to run 40771992301. That run's Mull step had not executed the mutants (it failed on an unsupported option). The score is from run 40898109414, job `mutation`, artifact `mull-report`. See `plan/AMENDMENT_PLAN_v36_r2.md`.
