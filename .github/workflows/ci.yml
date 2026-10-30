@@ -112,7 +112,7 @@ jobs:
       - name: Check bench gates (T-050 / T-051)
         shell: bash
         run: |
-          python3 tools/ci/check_bench.py --runner ${{ matrix.os }} \
+          ${{ runner.os == 'Windows' && 'python' || 'python3' }} tools/ci/check_bench.py --runner ${{ matrix.os }} \
               --results build/tests/bench-results.json \
               --candidate-out build/tests/bench-baseline-candidate.json
 
@@ -184,6 +184,20 @@ jobs:
               --seed-preset Resources/presets/preset01.xml
           GRIMAMP_FUZZ_DIR=$PWD/build-asan/fuzz_corpus ./build-asan/tests/grimamp_tests fuzz_presets 2>&1 | tee -a asan.log
 
+      # Rule 14 post-conditions: both runner invocations really ran to a passing verdict.
+      - name: Assert sanitizer runs completed
+        run: |
+          test -s asan.log
+          test "$(grep -c 'ALL TESTS PASSED' asan.log)" -eq 2
+
+      - name: Upload sanitizer log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: asan-log
+          path: asan.log
+          if-no-files-found: error
+
   mutation:
     runs-on: ubuntu-latest
     steps:
@@ -223,10 +237,13 @@ jobs:
 
       - name: Mutation score gate (T-070, floor 75 %)
         run: |
+          test -s mull.sqlite
           python3 - <<'PY'
           import sqlite3, sys
           rows = sqlite3.connect('mull.sqlite').execute('select execution_status from mutant').fetchall()
           total = len(rows)
+          if total < 100:   # post-condition: the report holds a plausible number of mutants
+              print(f'FAIL: only {total} mutants in the report'); sys.exit(1)
           survived = sum(1 for (s,) in rows if s == 2)  # 2 = Passed, i.e. the mutant survived
           score = 100.0 * (total - survived) / total
           print(f'Mutation score: {score:.1f}% ({total - survived}/{total} killed); floor 75%')
