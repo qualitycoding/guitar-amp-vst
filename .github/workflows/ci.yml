@@ -97,19 +97,26 @@ jobs:
         run: |
           BIN="build/GrimAmp_artefacts/${{ matrix.config }}/VST3/GrimAmp.vst3/Contents/x86_64-win/GrimAmp.vst3"
           [ -f "$BIN" ] || BIN=$(find build -name "GrimAmp.vst3" -path "*VST3*" | head -1)
-          dumpbin //imports "$BIN" | tee imports.txt || true
+          # Rule 14 (D-001p): no swallowed failures — a missing binary or a failed
+          # dumpbin must fail the step, not vacuously pass the grep below.
+          [ -n "$BIN" ] && [ -f "$BIN" ] || { echo "VST3 binary not found"; exit 1; }
+          dumpbin //imports "$BIN" | tee imports.txt
           ! grep -iE "ws2_32|wininet|winhttp|libcurl" imports.txt
           echo "T-040 windows pass"
 
+      # D-001n (maintainer decision 2026-10-30): the T-050 budget is NOT gated on
+      # shared virtual runners (macOS misses 15% at 18.0-35.6%; Windows EPYC passes
+      # at 10.8-11.7%). The step must still fail on crashes/harness errors — only
+      # the budget is informational. Baseline recipe: reviews/PROTOCOL_CONFORMANCE_v36.md §5.
       - name: Benchmark (T-050 informational + latency T-051)
-        run: ctest --test-dir build --output-on-failure -C ${{ matrix.config }} -R bench || true
+        run: ctest --test-dir build --output-on-failure -C ${{ matrix.config }} -R bench
 
       - name: Upload bench results
         uses: actions/upload-artifact@v4
         with:
           name: bench-results-${{ matrix.os }}
           path: build/tests/bench-results.json
-          if-no-files-found: ignore
+          if-no-files-found: error
 
   sanitize:
     # AddressSanitizer + UBSan over the fast test subset: catches the off-by-one and
@@ -212,4 +219,4 @@ jobs:
           path: |
             mull.sqlite
             mull.log
-          if-no-files-found: ignore
+          if-no-files-found: error

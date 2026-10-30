@@ -178,3 +178,44 @@ Windows (AMD EPYC, 4 cpus) passed every voicing (High 10.8–11.7 %). Decision (
 2026-10-30): keep the DSP and the budget unchanged; the bench step stays informational and the
 macOS figures are recorded as a known miss on shared virtual hardware, not optimised.
 `validation/performance.md` should cite both runners' numbers and this decision.
+
+## D-001o — plan amended to planning-protocol v3.6 (environment probe, ephemeral protections, Rule 6 fallback)
+
+- **Trigger:** the plan was written under protocol v3.4; the current protocol is v3.6
+  (v3.5 = Rule 14 honest verification + §1.3.6 pin verification + substitution logging,
+  written from this run's own review record; v3.6 = §0.1 environment-class probe +
+  §1.5 ephemeral protections + Rule 0.3 `[ephemeral]` tag + Global Rule 6 push cadence).
+- **What changed (no frozen test, pin of record, or product code touched):**
+  - `plan/ENVIRONMENT.md` gains §0.1 (probe result **`ephemeral`**, first-hand evidence
+    table), §1.5 (ephemeral protections incl. `tools/restage-env.sh`), a corrected pins
+    table and setup commands (JUCE **8.0.16-security** per D-001 — the table still said
+    8.0.15 with a `describe --tags` assertion that would fail S-001; pluginval
+    **v2.0.0-beta3** per D-001i — the pin "2.0.0" has no stable release), a
+    per-runner-class T-050 target table, and a hosts-table row naming the sandbox
+    bundle-push fallback.
+  - `plan/PROFILE.md` gains the Rule 0.3 `[ephemeral]` environment tag.
+  - `HANDOFF.md` gains the Global Rule 6 restatement (v3.6 §3.5) with the named
+    bundle fallback, and its stale "JUCE 8.0.12" line is corrected.
+  - `tools/restage-env.sh` added (turn-start restaging from the durable surface).
+- **Why this is a deviation and not silent edits:** plan documents are planning
+  artifacts; the protocol requires substitutions and relaxations to be logged. The
+  full gap analysis is `reviews/PROTOCOL_CONFORMANCE_v36.md`.
+- **Residuals named there (not silently absent):** T-050 stored regression baseline
+  (recipe recorded; re-gating belongs to the maintainer who signed D-001n), macOS
+  T-050 miss carried under D-001n, `ls-remote` verification as the human-side
+  postcondition of the bundle fallback.
+
+## D-001p — CI Rule 14 hardening (checks that could not fail)
+
+- **T-040 Windows import-table check was vacuous:** `dumpbin //imports … || true`
+  meant a missing dumpbin/binary left no `imports.txt`, and `! grep` on a missing
+  file trivially "passed". The step now fails if the binary is absent or dumpbin
+  errors; only the import grep gates on content.
+- **Benchmark step had `|| true`:** removed. Per D-001n the T-050 *budget* stays
+  informational on shared virtual runners, but crashes and harness failures must
+  still fail the step (a check that cannot fail is not a check).
+- **Artifact post-conditions:** bench-results and Mull-report uploads were
+  `if-no-files-found: ignore`; both are now `error` so a silent artifact loss fails
+  the job.
+- No frozen test modified; no strictness lowered; bench budget enforcement unchanged
+  (still per D-001n).
