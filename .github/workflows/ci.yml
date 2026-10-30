@@ -103,18 +103,27 @@ jobs:
           ! grep -iE "ws2_32|wininet|winhttp|libcurl" imports.txt
           echo "T-040 windows pass"
 
-      # D-001n (maintainer decision 2026-10-30): the T-050 budget is NOT gated on
-      # shared virtual runners (macOS misses 15% at 18.0-35.6%; Windows EPYC passes
-      # at 10.8-11.7%). The step must still fail on crashes/harness errors — only
-      # the budget is informational. Baseline recipe: reviews/PROTOCOL_CONFORMANCE_v36.md §5.
-      - name: Benchmark (T-050 informational + latency T-051)
+      - name: Benchmark (renders; gates are applied by the next step)
         run: ctest --test-dir build --output-on-failure -C ${{ matrix.config }} -R bench
 
+      # Rule 14 / A-3..A-5: T-051 latency and the per-runner-class T-050 budget and regression
+      # gates (tests/bench/bench-targets.json, baseline-T050.json). The macOS budget is relaxed by
+      # maintainer decision D-001n and only reported. The script always writes a baseline candidate.
+      - name: Check bench gates (T-050 / T-051)
+        shell: bash
+        run: |
+          python3 tools/ci/check_bench.py --runner ${{ matrix.os }} \
+              --results build/tests/bench-results.json \
+              --candidate-out build/tests/bench-baseline-candidate.json
+
       - name: Upload bench results
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: bench-results-${{ matrix.os }}
-          path: build/tests/bench-results.json
+          path: |
+            build/tests/bench-results.json
+            build/tests/bench-baseline-candidate.json
           if-no-files-found: error
 
   lint-ci:
@@ -125,6 +134,7 @@ jobs:
       - name: Lint self-tests (the checks can fail)
         run: |
           python3 tools/ci/lint_ci.py --selftest
+          python3 tools/ci/check_bench.py --selftest
       - name: Lint workflows for failure-swallowing idioms
         run: python3 tools/ci/lint_ci.py
 

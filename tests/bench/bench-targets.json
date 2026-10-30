@@ -1,0 +1,19 @@
+{
+  "_comment": "Per-runner-class T-050 targets (protocol Rule 14). budget_pct applies to the worst case voicing/mode in worst_case; regression_tolerance is the fraction above the stored baseline that fails, ignored below regression_floor_pp percentage points of absolute change (noise floor).",
+  "worst_case": "Frost/High",
+  "regression_tolerance": 0.2,
+  "regression_floor_pp": 2.0,
+  "runners": {
+    "windows-latest": {
+      "budget_pct": 15.0,
+      "enforce_budget": true,
+      "enforce_regression": true
+    },
+    "macos-latest": {
+      "budget_pct": 15.0,
+      "enforce_budget": false,
+      "enforce_regression": false,
+      "relaxed_by": "D-001n (maintainer, 2026-10-30)"
+    }
+  }
+}
