@@ -60,8 +60,7 @@ jobs:
           mkdir -p ~/Library/Audio/Plug-Ins/Components
           cp -R build/GrimAmp_artefacts/${{ matrix.config }}/AU/GrimAmp.component ~/Library/Audio/Plug-Ins/Components/
           codesign --force --deep -s - ~/Library/Audio/Plug-Ins/Components/GrimAmp.component
-          killall -9 AudioComponentRegistrar 2>/dev/null || true
-          auval -a | grep -i grim || true
+          if pgrep -x AudioComponentRegistrar >/dev/null; then killall -9 AudioComponentRegistrar; fi
 
       - name: pluginval strictness 5 (AU, macOS only)
         if: runner.os == 'macOS'
@@ -118,6 +117,17 @@ jobs:
           path: build/tests/bench-results.json
           if-no-files-found: error
 
+  lint-ci:
+    # Rule 14: the workflows themselves must not swallow failures; the linters must be able to fail.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Lint self-tests (the checks can fail)
+        run: |
+          python3 tools/ci/lint_ci.py --selftest
+      - name: Lint workflows for failure-swallowing idioms
+        run: python3 tools/ci/lint_ci.py
+
   sanitize:
     # AddressSanitizer + UBSan over the fast test subset: catches the off-by-one and
     # out-of-bounds reads that mutation testing cannot distinguish (reviews/MUTATION.md).
@@ -147,6 +157,7 @@ jobs:
           ASAN_OPTIONS: detect_leaks=0:abort_on_error=0:halt_on_error=1
           UBSAN_OPTIONS: print_stacktrace=1:halt_on_error=1
         run: |
+          set -o pipefail
           ./build-asan/tests/grimamp_tests \
               skeleton param_inventory param_ranges sine_sanity harmonics preset_roundtrip \
               state_restore smoothing gestures ir_loading \
@@ -158,6 +169,7 @@ jobs:
           ASAN_OPTIONS: detect_leaks=0:abort_on_error=0:halt_on_error=1
           UBSAN_OPTIONS: print_stacktrace=1:halt_on_error=1
         run: |
+          set -o pipefail
           python3 tests/fuzz_preset.py --seed 42 --count 1000 --out-dir build-asan/fuzz_corpus \
               --seed-preset Resources/presets/preset01.xml
           GRIMAMP_FUZZ_DIR=$PWD/build-asan/fuzz_corpus ./build-asan/tests/grimamp_tests fuzz_presets 2>&1 | tee -a asan.log
