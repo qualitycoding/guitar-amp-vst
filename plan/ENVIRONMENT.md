@@ -122,8 +122,11 @@ ctest --test-dir build --output-on-failure -C Release
 
 # 5. pluginval (download the v2.0.0-beta3 release binary per D-001i; macOS: remove quarantine attr)
 pluginval validate --strictness-level 5 build/GrimAmp_artefacts/Release/VST3/GrimAmp.vst3
-# macOS AU additionally:
-pluginval validate --strictness-level 5 build/GrimAmp_artefacts/Release/AU/GrimAmp.component
+# macOS AU additionally — the component must first be installed, ad-hoc signed and registered
+# or pluginval reports "No types found" (see .github/workflows/ci.yml "Register AU"; K-20261029T030500Z):
+cp -R build/GrimAmp_artefacts/Release/AU/GrimAmp.component ~/Library/Audio/Plug-Ins/Components/
+codesign --force --deep -s - ~/Library/Audio/Plug-Ins/Components/GrimAmp.component
+pluginval validate --strictness-level 5 ~/Library/Audio/Plug-Ins/Components/GrimAmp.component
 
 # 6. Freeze manifest check is also wired into CI (S-014).
 ```
