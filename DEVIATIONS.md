@@ -219,3 +219,32 @@ macOS figures are recorded as a known miss on shared virtual hardware, not optim
   the job.
 - No frozen test modified; no strictness lowered; bench budget enforcement unchanged
   (still per D-001n).
+
+## D-001q — protocol v3.6 conformance, round 2 (Rule 14 gates, ledger, closing steps)
+
+Plan: `plan/AMENDMENT_PLAN_v36_r2.md`. Substitutions and additions, logged as they were made:
+
+- **ci.yml:** `set -o pipefail` in both `sanitize` run blocks; `killall ... || true` replaced by a
+  `pgrep` guard and the diagnostic `auval ... || true` line removed; new job `lint-ci`; new step
+  "Check bench gates (T-050 / T-051)" in `build-test`; bench artifact now includes
+  `bench-baseline-candidate.json` and is uploaded `if: always()`; new steps "Assert sanitizer runs
+  completed" and "Upload sanitizer log"; mutation gate asserts `mull.sqlite` is non-empty and holds
+  at least 100 mutants. The first `python` vs `python3` choice (Windows image) is selected by
+  `runner.os`.
+- **Also logged here (found unlogged by the 1a diff):** the `sanitize` job (ASan + UBSan over the fast subset and the T-013 fuzz corpus) and `tests/MutationTests.cpp` with its `tests/CMakeLists.txt` wiring.
+- **New files (config/tooling, part of the pins under 1.3.6):** `tools/ci/lint_ci.py`,
+  `tools/ci/check_bench.py`, `tools/ci/swallow-allowlist.txt` (empty),
+  `tests/bench/bench-targets.json`, `tests/bench/baseline-T050.json` (from run 40898109414),
+  `tests/bench/README.md`, `plan/POSTCONDITIONS_v36.md`, `research/COMMAND_VERIFICATION.md`.
+- **Behaviour change:** the T-051 latency verdict now fails the build (the harness always exited 0);
+  the T-050 Frost/High budget and the >20 % regression check now fail the build on `windows-latest`.
+  macOS stays reported-only under D-001n. The Windows budget margin is thin (14.51 % in run
+  40898109414) and hosted-runner variance exceeds the 20 % tolerance (K-20261029T030800Z): a
+  failure is a signal to investigate, not to silence; relaxing it is a maintainer decision.
+- **Docs:** `plan/ENVIRONMENT.md` AU setup command (registration required); the 77.9 % run id in
+  `reviews/PROTOCOL_CONFORMANCE_v36.md` corrected (40771992301 -> 40898109414).
+- **State:** `.checkpoints/state.json` gains `execution_environments` (generation sandbox:
+  ephemeral; amendment session: stable) and `amendment_rounds`.
+- **Not done, named:** `S-REVIEW` and `S-ADVERSARIAL` (protocol 3.8, in the v3.4 plan) were never
+  executed: `reviews/` holds only MUTATION.md and the conformance review. They need fresh-context
+  reviewers. See RETROSPECTIVE.md section 2.
