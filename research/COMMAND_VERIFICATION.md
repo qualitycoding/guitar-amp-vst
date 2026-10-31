@@ -47,8 +47,11 @@ Otherwise none remain. The one command in `plan/ENVIRONMENT.md` that diverged fr
 AU `pluginval validate ... AU/GrimAmp.component` line, which fails with "No types found" unless
 the component is first copied, signed and registered; `plan/ENVIRONMENT.md` now says so.
 
-## 4. Pending confirmation
+## 4. Confirmation (A-12)
 
-Filled in by the close-out step (A-12) with the CI run id that exercised the new steps:
-`check_bench.py` on Windows (`python` interpreter) and macOS, the `pgrep` AU guard, the
-sanitizer post-conditions, and the `lint-ci` job.
+CI run 41145395094 (commit fc7fa9a), all five jobs green, exercised every step added in round 2:
+`check_bench.py` on Windows (`python`) and macOS (`python3`) - Windows Frost/High 14.41 % PASS,
+macOS 15.60 % reported as RELAXED (D-001n), latency PASS on both; the `pgrep` AU guard; the
+sanitizer post-conditions; the `lint-ci` job (workflow lint, ledger lint, both self-tests); the
+mutation gate with its new post-conditions; and `dumpbin` located under the Visual Studio
+install, with `T-040 windows pass` printed (the first time T-040 has really run on Windows).

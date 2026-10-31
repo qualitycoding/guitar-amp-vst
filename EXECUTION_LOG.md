@@ -41,3 +41,6 @@ later folded into the next checkpoint commit).
 | 2026-10-31T09:40Z | AMEND-r2 A-3..A-5 | 1 | done | b9e6e0f | `check_bench.py`, per-runner targets, stored baseline; T-051 latency now gates. Push verified. |
 | 2026-10-31T09:50Z | AMEND-r2 A-6 | 1 | done | 06883a6 | Post-conditions for the Mull report and sanitizer log; `plan/POSTCONDITIONS_v36.md`. Push verified. |
 | 2026-10-31T10:10Z | AMEND-r2 A-7/A-8 | 1 | done | c44631e, 509a6dd | Command/pin ledger with a CI completeness lint; environment classes in state.json. Push verified. |
+| 2026-10-31T11:00Z | AMEND-r2 A-10/A-11 | 1 | done | 10bc77a | RETROSPECTIVE.md (with 1a), lessons/knowledge and retrospective pushed to the stores; fresh-clone INDEX check passed. |
+| 2026-10-31T11:30Z | AMEND-r2 T-040 | 1 | finding+fix | bd8a144, fc7fa9a | Removing `\|\| true` exposed `dumpbin: command not found`; T-040 had never run on Windows. Step now finds dumpbin.exe; D-001q addendum. |
+| 2026-10-31T12:00Z | AMEND-r2 A-12 | 1 | done | fc7fa9a | CI run 41145395094 green on all five jobs; new gates exercised. Open: S-REVIEW / S-ADVERSARIAL never executed. |
