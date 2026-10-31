@@ -1,4 +1,5 @@
 #include "PresetManager.h"
+#include <cmath>
 #include "BinaryData.h"
 
 namespace gramp
@@ -171,7 +172,10 @@ juce::ValueTree PresetManager::tolerantParse (const juce::String& xmlText)
         if (child.hasType ("PARAM"))
         {
             auto id = child.getProperty ("id").toString();
-            if (id.isNotEmpty())
+            // AR-001: a non-finite value ("nan", "inf", "1e309") would become a NaN parameter and
+            // poison the DSP state; drop that parameter so its default applies.
+            const bool finiteValue = std::isfinite (child.getProperty ("value").toString().getDoubleValue());
+            if (id.isNotEmpty() && finiteValue)
             {
                 juce::ValueTree c ("PARAM");
                 c.setProperty ("id", id, nullptr);

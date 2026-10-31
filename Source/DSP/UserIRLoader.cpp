@@ -1,4 +1,5 @@
 #include "UserIRLoader.h"
+#include <cmath>
 #include <juce_audio_formats/juce_audio_formats.h>
 #include <juce_events/juce_events.h>
 
@@ -59,19 +60,22 @@ private:
         juce::AudioBuffer<float> result;
         double resultRate = rate;
 
-        if (reader != nullptr && reader->sampleRate > 0.0)
+        if (reader != nullptr && reader->sampleRate > 0.0 && std::isfinite (reader->sampleRate))
         {
             const double srcRate = reader->sampleRate;
-            const int srcLen = (int) reader->lengthInSamples;
-            const int maxLen = 2 * 48000 * 30;      // sanity cap: 30 s at 96 kHz
-            const int len = juce::jmin (srcLen, maxLen);
+            const int maxLen = 2 * 48000 * 30;      // sanity cap: 30 s at 96 kHz, applied to source AND output
+            // CR-007: clamp in 64-bit before narrowing, and bound the resampled length, not just the source
+            const int len = (int) juce::jmin ((juce::int64) maxLen, reader->lengthInSamples);
+            const bool needsResample = std::abs (srcRate - rate) > 1.0;
+            const double dstLenD = std::ceil ((double) len * rate / srcRate);
+            const bool sizeOk = len > 0 && (! needsResample || (dstLenD >= 1.0 && dstLenD <= (double) maxLen));
 
-            if (len > 0)
+            if (sizeOk)
             {
                 juce::AudioBuffer<float> raw (2, len);
-                reader->read (&raw, 0, len, 0, true, true);
+                const bool readOk = reader->read (&raw, 0, len, 0, true, true);
 
-                if (std::abs (srcRate - rate) > 1.0)
+                if (readOk && needsResample)
                 {
                     // offline resample to the host rate (AudioFormatReaderSource +
                     // ResamplingAudioSource, as suggested by D-004)
@@ -80,18 +84,28 @@ private:
                     juce::ResamplingAudioSource resampler (&src, false, 2);
                     resampler.setResamplingRatio (srcRate / rate);
                     resampler.prepareToPlay (len, rate);
-                    const int dstLen = (int) std::ceil ((double) len * rate / srcRate);
+                    const int dstLen = (int) dstLenD;
                     result.setSize (2, dstLen);
                     juce::AudioSourceChannelInfo info (&result, 0, dstLen);
                     resampler.getNextAudioBlock (info);
                 }
-                else
+                else if (readOk)
                 {
                     result = raw;
                 }
 
+                // reject non-finite content (a NaN/Inf IR would poison the convolution output)
+                bool finite = readOk;
+                for (int ch = 0; finite && ch < result.getNumChannels(); ++ch)
+                {
+                    const float* d = result.getReadPointer (ch);
+                    for (int i = 0; i < result.getNumSamples(); ++i)
+                        if (! std::isfinite (d[i])) { finite = false; break; }
+                }
+
                 resultRate = rate;
-                ok = result.getNumSamples() > 0
+                ok = finite
+                     && result.getNumSamples() > 0
                      && ! result.hasBeenCleared();
             }
         }

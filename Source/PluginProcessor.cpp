@@ -20,7 +20,8 @@ namespace
     inline int choiceIndex (const juce::AudioProcessorValueTreeState& apvts, const juce::StringRef id)
     {
         auto* p = apvts.getParameter (id);
-        return (int) std::lround (p->convertFrom0to1 (p->getValue()));
+        const float v = p->convertFrom0to1 (p->getValue());
+        return std::isfinite (v) ? juce::jmax (0, (int) std::lround (v)) : 0;   // AR-001: NaN-safe
     }
 }
 
@@ -151,6 +152,13 @@ bool GrimAmpAudioProcessor::isBusesLayoutSupported (const BusesLayout& layouts) 
 void GrimAmpAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
     currentRate = sampleRate;
+    preparedBlockSize = juce::jmax (1, samplesPerBlock);
+
+    // CR-002: take the stepped settings from the parameters (a host may have restored state
+    // before prepareToPlay); after prepare, applySteppedParams detects any later change.
+    currentVoicing = pendingVoicing = juce::jlimit (0, gramp::numVoicings - 1, choiceIndex (apvts, gramp::param::ampVoicing));
+    currentCab     = pendingCab     = choiceIndex (apvts, gramp::param::cabIr);
+    currentOs      = pendingOs      = choiceIndex (apvts, gramp::param::oversampling);
 
     const juce::dsp::ProcessSpec spec { sampleRate, (juce::uint32) samplesPerBlock, 2 };
     gate.prepare (sampleRate, samplesPerBlock);
@@ -285,6 +293,26 @@ void GrimAmpAudioProcessor::applySteppedParams()
 }
 
 void GrimAmpAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
+                                          juce::MidiBuffer& midiMessages)
+{
+    // CR-008: a host may deliver more samples than it declared in prepareToPlay; the scratch and
+    // oversampling buffers are sized for the declared maximum, so process such blocks in chunks.
+    const int total = buffer.getNumSamples();
+    if (! prepared || total <= preparedBlockSize)
+    {
+        processChunk (buffer, midiMessages);
+        return;
+    }
+
+    for (int pos = 0; pos < total; pos += preparedBlockSize)
+    {
+        const int len = juce::jmin (preparedBlockSize, total - pos);
+        juce::AudioBuffer<float> chunk (buffer.getArrayOfWritePointers(), buffer.getNumChannels(), pos, len);
+        processChunk (chunk, midiMessages);
+    }
+}
+
+void GrimAmpAudioProcessor::processChunk (juce::AudioBuffer<float>& buffer,
                                           juce::MidiBuffer& midiMessages)
 {
     juce::ScopedNoDenormals noDenormals;
@@ -494,14 +522,17 @@ void GrimAmpAudioProcessor::setStateInformation (const void* data, int sizeInByt
     {
         if (auto newState = juce::ValueTree::fromXml (*xml); newState.isValid())
         {
+            // AR-001: drop PARAM entries whose value is not finite before they reach the DSP
+            for (int i = newState.getNumChildren(); --i >= 0;)
+            {
+                auto child = newState.getChild (i);
+                if (child.hasType ("PARAM") && ! std::isfinite (child.getProperty ("value").toString().getDoubleValue()))
+                    newState.removeChild (i, nullptr);
+            }
             apvts.replaceState (newState);
 
-            // keep stepped mirrors in sync for the next block boundary
-            currentVoicing = pendingVoicing = choiceIndex (apvts, gramp::param::ampVoicing);
-            currentCab     = pendingCab     = choiceIndex (apvts, gramp::param::cabIr);
-            currentOs      = pendingOs      = choiceIndex (apvts, gramp::param::oversampling);
-            loudnessGain   = juce::Decibels::decibelsToGain (
-                gramp::voicings[juce::jlimit (0, gramp::numVoicings - 1, currentVoicing)].loudnessGainDb);
+            // CR-002: the stepped-setting mirrors are owned by the audio thread (prepareToPlay /
+            // applySteppedParams); writing them here left the DSP on stale settings after a recall.
         }
     }
 }

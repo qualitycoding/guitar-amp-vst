@@ -244,6 +244,38 @@ struct NoiseGateMutationTest : juce::UnitTest
             expectLessThan (outPeak, 0.2f * inPeak);
         }
 
+        beginTest ("gate survives exact-zero silence after loud input (CR-003: no NaN latch)");
+        {
+            for (const float quietAmp : { 0.002f, 0.0005f })
+            {
+                std::vector<float> sig;
+                const auto loud = sine ((int) (0.3 * kRate), 220.0, 0.7f);
+                sig.insert (sig.end(), loud.begin(), loud.end());
+                sig.insert (sig.end(), (size_t) (0.3 * kRate), 0.0f);          // exact digital zeros
+                const auto quiet = sine ((int) (0.5 * kRate), 330.0, quietAmp);
+                sig.insert (sig.end(), quiet.begin(), quiet.end());
+                const auto orig = sig;
+
+                gramp::NoiseGate gate;
+                gate.prepare (kRate, 512);
+                gate.setSmoothedThreshold (-30.0f);
+                gate.processBlock (sig.data(), (int) sig.size());
+
+                bool allFinite = true;
+                for (float v : sig)
+                    allFinite = allFinite && std::isfinite (v);
+                expect (allFinite);
+
+                float inPeak = 0.0f, outPeak = 0.0f;
+                for (size_t i = sig.size() - (size_t) (0.1 * kRate); i < sig.size(); ++i)
+                {
+                    inPeak = juce::jmax (inPeak, std::abs (orig[i]));
+                    outPeak = juce::jmax (outPeak, std::abs (sig[i]));
+                }
+                expectLessThan (outPeak, 0.2f * inPeak);   // the gate still closes after the silence
+            }
+        }
+
         beginTest ("gate is inert before prepare");
         {
             gramp::NoiseGate gate;
@@ -599,6 +631,8 @@ struct UserIrLoaderMutationTest : juce::UnitTest
         juce::WavAudioFormat wav;
         std::unique_ptr<juce::AudioFormatWriter> w (
             wav.createWriterFor (file.createOutputStream().release(), rate, 1, 16, {}, 0));
+        if (w == nullptr)
+            return {};
         juce::AudioBuffer<float> b (1, length);
         for (int i = 0; i < length; ++i)
             b.setSample (0, i, ramp ? 0.5f * (float) i / (float) length : 0.25f);
@@ -661,6 +695,21 @@ struct UserIrLoaderMutationTest : juce::UnitTest
             f.deleteFile();
         }
 
+        beginTest ("an IR whose resampled length would exceed the cap is rejected (CR-007)");
+        {
+            const auto f = writeWav ("grimamp_mut_lowrate.wav", 100.0, 10000);   // 10000 samples at 100 Hz -> 4.8 M at 48 kHz
+            if (f != juce::File())
+            {
+                gramp::UserIRLoader l;
+                l.loadFileAsync (f, 48000.0, nullptr);
+                juce::AudioBuffer<float> out;
+                double rate = 0.0;
+                juce::Thread::sleep (500);
+                expect (! l.takeLoadedBuffer (out, rate));
+                f.deleteFile();
+            }
+        }
+
         beginTest ("a missing file never produces a buffer");
         {
             gramp::UserIRLoader l;
@@ -709,6 +758,176 @@ struct PresetListMutationTest : juce::UnitTest
     }
 };
 
+// ------------------------------------------------------------ processor-level regressions
+namespace
+{
+void setParam (GrimAmpAudioProcessor& proc, const char* id, float value)
+{
+    auto* p = proc.apvts.getParameter (id);
+    p->setValueNotifyingHost (p->convertTo0to1 (value));
+}
+}
+
+struct StateRecallDspTest : juce::UnitTest
+{
+    StateRecallDspTest() : juce::UnitTest ("state_recall_dsp") {}
+
+    static float settledRms (GrimAmpAudioProcessor& proc)
+    {
+        juce::MidiBuffer midi;
+        juce::AudioBuffer<float> b (2, 256);
+        float rms = 0.0f;
+        for (int blk = 0; blk < 160; ++blk)
+        {
+            for (int i = 0; i < 256; ++i)
+            {
+                const float v = 0.2f * (float) std::sin (2.0 * juce::MathConstants<double>::pi * 220.0 * (blk * 256 + i) / kRate);
+                b.setSample (0, i, v);
+                b.setSample (1, i, v);
+            }
+            proc.processBlock (b, midi);
+            juce::Thread::sleep (2);
+            if (blk >= 140)
+                rms = juce::jmax (rms, b.getRMSLevel (0, 0, 256));
+        }
+        return rms;
+    }
+
+    void runTest() override
+    {
+        beginTest ("state restored after prepareToPlay reaches the DSP (CR-002)");
+
+        juce::MemoryBlock blob;
+        {
+            GrimAmpAudioProcessor src;
+            setParam (src, gramp::param::ampVoicing, 5.0f);
+            setParam (src, gramp::param::cabIr, 3.0f);
+            setParam (src, gramp::param::oversampling, 0.0f);   // Eco
+            setParam (src, gramp::param::irMix, 1.0f);
+            src.getStateInformation (blob);
+        }
+
+        // A: prepared with defaults, state restored afterwards (the host order that broke)
+        GrimAmpAudioProcessor a;
+        a.prepareToPlay (kRate, 256);
+        {
+            juce::MidiBuffer midi;
+            juce::AudioBuffer<float> warm (2, 256);
+            warm.clear();
+            a.processBlock (warm, midi);
+        }
+        a.setStateInformation (blob.getData(), (int) blob.getSize());
+
+        // B: state restored first, then prepared
+        GrimAmpAudioProcessor b;
+        b.setStateInformation (blob.getData(), (int) blob.getSize());
+        b.prepareToPlay (kRate, 256);
+
+        const float ra = settledRms (a);
+        const float rb = settledRms (b);
+
+        expectEquals (a.getLatencySamples(), b.getLatencySamples());
+        expectEquals (a.getLatencySamples(), 0);   // Eco is zero-latency; High would report 4
+        expectGreaterThan (rb, 1.0e-4f);
+        expectWithinAbsoluteError (juce::Decibels::gainToDecibels (ra), juce::Decibels::gainToDecibels (rb), 1.5f);
+    }
+};
+
+struct OversizeBlockTest : juce::UnitTest
+{
+    OversizeBlockTest() : juce::UnitTest ("oversize_block") {}
+
+    void runTest() override
+    {
+        beginTest ("a block larger than prepareToPlay's maximum is processed in chunks (CR-008)");
+
+        const int prepared = 256, total = 4096;
+        GrimAmpAudioProcessor big, small;
+        for (auto* p : { &big, &small })
+        {
+            setParam (*p, gramp::param::irMix, 0.0f);   // no async convolution: outputs are deterministic
+            p->prepareToPlay (kRate, prepared);
+        }
+
+        juce::AudioBuffer<float> bigBuf (2, total);
+        for (int i = 0; i < total; ++i)
+        {
+            const float v = 0.3f * (float) std::sin (2.0 * juce::MathConstants<double>::pi * 330.0 * i / kRate);
+            bigBuf.setSample (0, i, v);
+            bigBuf.setSample (1, i, v);
+        }
+        juce::AudioBuffer<float> chunked (bigBuf);
+
+        juce::MidiBuffer midi;
+        big.processBlock (bigBuf, midi);
+
+        for (int pos = 0; pos < total; pos += prepared)
+        {
+            juce::AudioBuffer<float> part (chunked.getArrayOfWritePointers(), 2, pos, prepared);
+            small.processBlock (part, midi);
+        }
+
+        float maxErr = 0.0f;
+        bool finite = true;
+        for (int ch = 0; ch < 2; ++ch)
+            for (int i = 0; i < total; ++i)
+            {
+                finite = finite && std::isfinite (bigBuf.getSample (ch, i));
+                maxErr = juce::jmax (maxErr, std::abs (bigBuf.getSample (ch, i) - chunked.getSample (ch, i)));
+            }
+        expect (finite);
+        expectLessThan (maxErr, 1.0e-6f);
+    }
+};
+
+struct NanPresetTest : juce::UnitTest
+{
+    NanPresetTest() : juce::UnitTest ("nan_preset") {}
+
+    void runTest() override
+    {
+        beginTest ("non-finite preset values are dropped and the chain stays finite (AR-001)");
+
+        for (const char* bad : { "nan", "NaN", "inf", "-inf", "1e309" })
+        {
+            GrimAmpAudioProcessor proc;
+            proc.prepareToPlay (kRate, 256);
+            const auto root = proc.apvts.state.getType().toString();
+            const juce::String xml = juce::String ("<") + root + ">"
+                + "<PARAM id=\"drive\" value=\"" + bad + "\"/>"
+                + "<PARAM id=\"amp-voicing\" value=\"" + bad + "\"/>"
+                + "<PARAM id=\"master\" value=\"" + bad + "\"/>"
+                + "</" + root + ">";
+            proc.getPresetManager().loadPresetFromXml (xml);
+
+            // same payload through the host session-state path
+            juce::MemoryBlock blob;
+            if (auto parsed = juce::XmlDocument::parse (xml))
+                juce::AudioProcessor::copyXmlToBinary (*parsed, blob);
+            proc.setStateInformation (blob.getData(), (int) blob.getSize());
+
+            juce::MidiBuffer midi;
+            juce::AudioBuffer<float> b (2, 256);
+            bool finite = true;
+            for (int blk = 0; blk < 40; ++blk)
+            {
+                for (int i = 0; i < 256; ++i)
+                {
+                    const float v = 0.2f * (float) std::sin (2.0 * juce::MathConstants<double>::pi * 220.0 * (blk * 256 + i) / kRate);
+                    b.setSample (0, i, v);
+                    b.setSample (1, i, v);
+                }
+                proc.processBlock (b, midi);
+                for (int ch = 0; ch < 2; ++ch)
+                    for (int i = 0; i < 256; ++i)
+                        finite = finite && std::isfinite (b.getSample (ch, i));
+            }
+            expect (finite, juce::String ("non-finite output after value '") + bad + "'");
+            proc.prepareToPlay (kRate, 256);   // re-prepare must not index voicings[] out of range
+        }
+    }
+};
+
 BoostMutationTest tm1;
 NoiseGateMutationTest tm2;
 ToneStackMutationTest tm3;
@@ -716,4 +935,7 @@ PowerAmpMutationTest tm4;
 CabIRMutationTest tm5;
 UserIrLoaderMutationTest tm6;
 PresetListMutationTest tm7;
+StateRecallDspTest tm8;
+OversizeBlockTest tm9;
+NanPresetTest tm10;
 } // namespace

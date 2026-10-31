@@ -10,6 +10,9 @@
 #include <juce_audio_basics/juce_audio_basics.h>
 #include <juce_dsp/juce_dsp.h>
 
+#include <algorithm>
+#include <cmath>
+
 namespace gramp
 {
 class NoiseGate
@@ -26,6 +29,8 @@ public:
     {
         runningSumOfSquares = 0.0;
         rmsWindowFill = 0;
+        fifoPos = 0;
+        std::fill (std::begin (fifo), std::end (fifo), 0.0f);
         envelope = 0.0;
         gain = 1.0;
         gateOpen = true;
@@ -65,11 +70,17 @@ public:
                 runningSumOfSquares -= (double) fifo[(size_t) fifoPos];
 
             const int n = juce::jmax (1, rmsWindowFill);
+            // CR-003: add/subtract leaves a +-1e-13 residual in digital silence; a negative one
+            // would make sqrt NaN and latch the envelope. Clamp, and re-zero a silent window.
+            if (runningSumOfSquares < 1.0e-12)
+                runningSumOfSquares = 0.0;
             const float rms = std::sqrt ((float) (runningSumOfSquares / (double) n));
 
             // envelope follower (fast attack, slow release) on the RMS level
             const float coef = (rms > envelope) ? 0.30f : 0.02f;
             envelope += coef * (rms - envelope);
+            if (! std::isfinite (envelope))
+                envelope = 0.0f;
 
             // hysteresis state machine
             const float envDb = juce::Decibels::gainToDecibels (envelope, -120.0f);

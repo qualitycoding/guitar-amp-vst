@@ -35,6 +35,8 @@ public:
     bool isMidiEffect() const override;
 
     void processBlock (juce::AudioBuffer<float>&, juce::MidiBuffer&) override;
+    /*  One host block of at most preparedBlockSize samples (CR-008: processBlock splits larger ones). */
+    void processChunk (juce::AudioBuffer<float>&, juce::MidiBuffer&);
 
     juce::AudioProcessorEditor* createEditor() override;
     bool hasEditor() const override;
@@ -111,6 +113,7 @@ private:
     juce::AudioBuffer<float> dryScratch, postEqScratch;
 
     bool prepared = false;
+    int preparedBlockSize = 0;
     bool userIrApplied = false;
     double currentRate = 44100.0;
 

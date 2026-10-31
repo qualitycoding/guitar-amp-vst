@@ -66,7 +66,7 @@ set (GRIMAMP_UNIT_TESTS
     skeleton param_inventory param_ranges silence sine_sanity harmonics
     denormals preset_roundtrip state_restore smoothing gestures ir_loading
     boost_reference gate_reference tonestack_reference poweramp_reference
-    cabir_selection userir_loader preset_list
+    cabir_selection userir_loader preset_list state_recall_dsp oversize_block nan_preset
 )
 
 foreach (t ${GRIMAMP_UNIT_TESTS})
