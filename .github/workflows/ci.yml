@@ -75,11 +75,14 @@ jobs:
       - name: Security grep — file I/O confined to preset/IR modules
         shell: bash
         run: |
-          ! grep -rn --include=*.h --include=*.cpp -E "File(InputStream|OutputStream)::|createInputStream|createOutputStream|loadFileAsString|createReaderFor" \
+          test -d Source   # post-condition: the tree being scanned exists (a grep error must not look like "no offenders")
+          if offenders=$(grep -rn --include=*.h --include=*.cpp -E "File(InputStream|OutputStream)::|createInputStream|createOutputStream|loadFileAsString|createReaderFor" \
               Source/ \
               | grep -v "Source/Presets/" \
               | grep -v "Source/DSP/UserIRLoader" \
-              | grep -v "Source/DSP/CabIR.h"
+              | grep -v "Source/DSP/CabIR.h"); then
+            echo "$offenders"; echo "T-041 FAIL: file I/O outside the preset/IR modules"; exit 1
+          fi
           echo "T-041 pass"
 
       # --- T-040: no network ---------------------------------------------
@@ -87,7 +90,9 @@ jobs:
         shell: bash
         run: |
           grep -rn --include=CMakeLists.txt --include=*.h --include=*.cpp -E "JUCE_USE_CURL=0" CMakeLists.txt Source/ tests/
-          ! grep -rn --include=*.h --include=*.cpp -E "juce::(URL|Socket|StreamingSocket)" Source/ tests/
+          if grep -rn --include=*.h --include=*.cpp -E "juce::(URL|Socket|StreamingSocket)" Source/ tests/; then
+            echo "T-040 FAIL: network types used"; exit 1
+          fi
           echo "T-040 static pass (import-table check runs on binaries below on Windows)"
 
       - name: T-040 import-table check (Windows)
@@ -105,7 +110,9 @@ jobs:
           [ -n "$DUMPBIN" ] || { echo "dumpbin.exe not found in the Visual Studio installation"; exit 1; }
           "$DUMPBIN" //imports "$BIN" | tee imports.txt
           [ -s imports.txt ] || { echo "dumpbin produced no output"; exit 1; }
-          ! grep -iE "ws2_32|wininet|winhttp|libcurl" imports.txt
+          if grep -iE "ws2_32|wininet|winhttp|libcurl" imports.txt; then
+            echo "T-040 FAIL: forbidden network imports"; exit 1
+          fi
           echo "T-040 windows pass"
 
       - name: Benchmark (renders; gates are applied by the next step)

@@ -33,6 +33,15 @@ def lint_text(name, text, allow):
         for rx, msg in PATTERNS:
             if rx.search(code) and not any(a == f"{name}:{frag}" for a in allow for frag in [a.split(":", 1)[1]] if frag in line):
                 problems.append(f"{name}:{n}: {msg}: {line.strip()}")
+    # a command negated with `!` is ignored by errexit: a match would not stop the step
+    in_run = False
+    for n, line in enumerate(lines, 1):
+        if re.match(r"\s*(-\s+)?run:", line):
+            in_run = True
+        elif re.match(r"\s*-\s+\w|\s*\w[\w-]*:\s", line) and not line.startswith("          "):
+            in_run = False
+        if in_run and re.match(r"\s+!\s+\S", line):
+            problems.append(f"{name}:{n}: negated command ('! cmd') is not covered by errexit; use `if cmd; then exit 1; fi`: {line.strip()}")
     # pipelines into tee need pipefail (default `bash -e {0}` has none)
     i = 0
     while i < len(lines):
@@ -106,11 +115,11 @@ def ledger_check(root):
 
 
 def selftest():
-    bad = "steps:\n  - run: make || true\n  - run: |\n      ./t | tee log\n  - continue-on-error: true\n  - run: set +e\n"
+    bad = "steps:\n  - run: make || true\n  - run: |\n      ./t | tee log\n  - continue-on-error: true\n  - run: set +e\n  - run: |\n      set -o pipefail\n      ! grep -q x f\n"
     good = "steps:\n  - run: |\n      set -o pipefail\n      ./t | tee log\n  - shell: bash\n    run: |\n      ./t | tee log\n"
     nb, ng = len(lint_text("x.yml", bad, [])), len(lint_text("x.yml", good, []))
-    ok = nb == 4 and ng == 0
-    print(f"selftest: bad={nb} (want 4) good={ng} (want 0) -> {'ok' if ok else 'FAIL'}")
+    ok = nb == 5 and ng == 0
+    print(f"selftest: bad={nb} (want 5) good={ng} (want 0) -> {'ok' if ok else 'FAIL'}")
     return 0 if ok else 1
 
 
