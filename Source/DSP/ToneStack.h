@@ -7,6 +7,8 @@
   themselves arrive smoothed from the processor (D-006).
 */
 #pragma once
+#include <algorithm>
+#include <iterator>
 #include <juce_dsp/juce_dsp.h>
 #include "Voicings.h"
 
@@ -19,6 +21,7 @@ public:
     {
         current = row;
         sr = sampleRate;
+        gainsValid = false;
         recalc();
         const juce::dsp::ProcessSpec spec { sampleRate, 128, 2 };
         for (auto* f : { &bass, &mid, &treble, &presence, &depth })
@@ -36,12 +39,20 @@ public:
     {
         current = row;
         sr = sampleRate;
+        gainsValid = false;
         recalc();
     }
 
     /*  Knob values 0..1, already smoothed. */
     void setBandGains (float bassK, float midK, float trebleK, float presenceK, float depthK)
     {
+        // CR-005: skip the coefficient rebuild (5 heap allocations) when no knob moved
+        const float k[5] = { bassK, midK, trebleK, presenceK, depthK };
+        if (gainsValid && std::equal (std::begin (k), std::end (k), std::begin (lastK)))
+            return;
+        std::copy (std::begin (k), std::end (k), std::begin (lastK));
+        gainsValid = true;
+
         const auto mapRange = [] (float knob, float rangeDb)
         {
             return (knob - 0.5f) * rangeDb;
@@ -74,6 +85,8 @@ private:
     }
 
     double sr = 44100.0;
+    float lastK[5] = {};
+    bool gainsValid = false;
     VoicingRow current = voicings[1];   // Plexi fallback
     juce::dsp::ProcessorDuplicator<juce::dsp::IIR::Filter<float>,
                                    juce::dsp::IIR::Coefficients<float>> bass, mid, treble, presence, depth;
