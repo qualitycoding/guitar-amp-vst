@@ -847,6 +847,15 @@ struct OversizeBlockTest : juce::UnitTest
         {
             setParam (*p, gramp::param::irMix, 0.0f);   // no async convolution: outputs are deterministic
             p->prepareToPlay (kRate, prepared);
+            // let the 20 ms parameter ramps (ir-mix 1 -> 0) finish on silence, so no async
+            // convolution state can differ between the two processors
+            juce::MidiBuffer warmMidi;
+            juce::AudioBuffer<float> warm (2, prepared);
+            for (int w = 0; w < 12; ++w)
+            {
+                warm.clear();
+                p->processBlock (warm, warmMidi);
+            }
         }
 
         juce::AudioBuffer<float> bigBuf (2, total);
