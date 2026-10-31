@@ -227,7 +227,8 @@ bool PresetManager::loadPreset (int index)
 
 int PresetManager::saveUserPreset (const juce::String& name)
 {
-    auto safeName = name.trim();
+    // CR-013/AR-008: the name becomes a file name, never a path
+    auto safeName = juce::File::createLegalFileName (name.trim()).trimCharactersAtStart (".").trim();
     if (safeName.isEmpty())
         safeName = "Untitled";
 
@@ -236,6 +237,8 @@ int PresetManager::saveUserPreset (const juce::String& name)
         return -1;
 
     auto file = dir.getChildFile (safeName + ".grindpreset");
+    if (file.getParentDirectory() != dir)
+        return -1;
 
     auto state = apvts.copyState();
     auto xml = state.createXml();

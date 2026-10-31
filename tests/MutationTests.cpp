@@ -754,6 +754,14 @@ struct PresetListMutationTest : juce::UnitTest
         expect (past.factoryIndex == -1);
         expect (pm.getPresetInfo (-1).name.isEmpty());
         expect (pm.getPresetInfo (0).name.isNotEmpty());
+
+        // CR-013: a preset name is a file name, never a path
+        const int idx = pm.saveUserPreset ("../../grimamp_escape_test");
+        const auto escaped = pm.getUserPresetsDir().getParentDirectory().getParentDirectory().getChildFile ("grimamp_escape_test.grindpreset");
+        expect (! escaped.existsAsFile());
+        if (idx >= 0)
+            pm.getPresetInfo (idx).userFile.deleteFile();
+        pm.refresh();
         expect (pm.getPresetInfo (pm.getNumPresets() - 1).name.isNotEmpty());
     }
 };

@@ -256,3 +256,17 @@ Removing the `|| true` from the dumpbin step (D-001p) exposed `dumpbin: command 
 earlier run. The step now finds `dumpbin.exe` in the Visual Studio installation and fails if it is
 missing or produces no output. Whether the forbidden-import grep then passes is determined by the
 next CI run; a real finding there is a product or security issue, not a CI problem.
+
+## D-001r — fixes from the S-REVIEW / S-ADVERSARIAL reviews
+
+Source changes beyond the original plan, each backed by a regression test (disposition table in
+`reviews/REVIEW_DISPOSITION.md`): `PluginProcessor.cpp` (prepareToPlay takes stepped settings from
+the parameters, setStateInformation no longer touches them, oversize host blocks are processed in
+chunks via the new `processChunk`, NaN-safe `choiceIndex`, non-finite state values dropped),
+`NoiseGate.h` (silence clamp, finite guard, full reset), `UserIRLoader.cpp` (length/size/finite
+validation), `PresetManager.cpp` (legal file names, non-finite values dropped). New tests in
+`tests/MutationTests.cpp`: `state_recall_dsp`, `oversize_block`, `nan_preset`, plus cases in
+`gate_reference`, `userir_loader`, `preset_list`. CI: three security gates rewritten (CR-001),
+`permissions: contents: read`. The behaviour of the plugin changes only in the repaired cases
+(recall after prepare, silence after loud audio, hostile inputs); loudness calibration was not
+re-run.

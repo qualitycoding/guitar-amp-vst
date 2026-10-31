@@ -5,6 +5,10 @@ on:
     branches: [ impl-*, main, master ]
   pull_request:
 
+# CR-017: least-privilege token; nothing here writes to the repository
+permissions:
+  contents: read
+
 jobs:
   build-test:
     strategy:

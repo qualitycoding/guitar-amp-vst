@@ -44,3 +44,6 @@ later folded into the next checkpoint commit).
 | 2026-10-31T11:00Z | AMEND-r2 A-10/A-11 | 1 | done | 10bc77a | RETROSPECTIVE.md (with 1a), lessons/knowledge and retrospective pushed to the stores; fresh-clone INDEX check passed. |
 | 2026-10-31T11:30Z | AMEND-r2 T-040 | 1 | finding+fix | bd8a144, fc7fa9a | Removing `\|\| true` exposed `dumpbin: command not found`; T-040 had never run on Windows. Step now finds dumpbin.exe; D-001q addendum. |
 | 2026-10-31T12:00Z | AMEND-r2 A-12 | 1 | done | fc7fa9a | CI run 41145395094 green on all five jobs; new gates exercised. Open: S-REVIEW / S-ADVERSARIAL never executed. |
+| 2026-10-31T14:00Z | S-REVIEW | 1 | done | d55b76a | Fresh-context code review (28 findings). Report `reviews/CODE_REVIEW.md`. |
+| 2026-10-31T14:10Z | S-ADVERSARIAL | 1 | done | d55b76a | Fresh-context adversarial review (1 High, 6 Medium, 3 Low). Report `reviews/ADVERSARIAL_REVIEW.md`; first attempt hit an API rate limit and was resumed. |
+| 2026-10-31T14:30Z | REVIEW-FIX | 1 | partial | 2a4ae47, d55b76a, f5f44bf | CR-001/002/003/007/008, AR-001 fixed with tests; one test (`oversize_block`) needed the ir-mix ramp to settle first. Window T-040 gate now fails honestly on WININET/WS2_32 - human decision. Disposition in reviews/REVIEW_DISPOSITION.md. |
