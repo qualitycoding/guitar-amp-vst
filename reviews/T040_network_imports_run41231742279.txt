@@ -1,0 +1,15 @@
+WININET.dll!FtpOpenFileW
+WININET.dll!HttpEndRequestW
+WININET.dll!HttpOpenRequestW
+WININET.dll!HttpQueryInfoW
+WININET.dll!HttpSendRequestExW
+WININET.dll!InternetCloseHandle
+WININET.dll!InternetConnectW
+WININET.dll!InternetCrackUrlW
+WININET.dll!InternetOpenW
+WININET.dll!InternetReadFile
+WININET.dll!InternetSetFilePointer
+WININET.dll!InternetSetOptionW
+WININET.dll!InternetWriteFile
+WS2_32.dll!freeaddrinfo
+WS2_32.dll!getaddrinfo
