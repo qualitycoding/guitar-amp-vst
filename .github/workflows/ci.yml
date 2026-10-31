@@ -119,6 +119,24 @@ jobs:
           fi
           echo "T-040 windows pass"
 
+      # T-040 evidence (human-gate item): which functions the binary imports from network DLLs.
+      - name: Collect network-import evidence (Windows)
+        if: always() && runner.os == 'Windows'
+        shell: bash
+        run: |
+          test -s imports.txt
+          python tools/ci/netimports.py imports.txt network-imports.txt
+
+      - name: Upload network-import evidence (Windows)
+        if: always() && runner.os == 'Windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: network-imports
+          path: |
+            imports.txt
+            network-imports.txt
+          if-no-files-found: error
+
       - name: Benchmark (renders; gates are applied by the next step)
         run: ctest --test-dir build --output-on-failure -C ${{ matrix.config }} -R bench
 
