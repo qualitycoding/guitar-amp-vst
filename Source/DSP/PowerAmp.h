@@ -78,19 +78,13 @@ public:
         }
     }
 
+    /*  Thump shelf driven by this instance's sag envelope (S-007). The block holds the channel(s)
+        this instance serves; the processor keeps one PowerAmp per channel (CR-004). Coefficients
+        are rebuilt only when the gain moved by more than 0.01 dB (CR-005: no per-block allocation). */
     void processThump (juce::dsp::AudioBlock<float>& block, float sagKnob)
     {
-        processThump (block, sagKnob, env);
-    }
-
-    /*  Thump shelf driven by an externally supplied envelope (the processor passes the larger of
-        the per-channel envelopes, so one shelf serves both channels). Coefficients are rebuilt only
-        when the gain moved by more than 0.01 dB (CR-005: no per-block allocation). */
-    void processThump (juce::dsp::AudioBlock<float>& block, float sagKnob, float envelope)
-    {
-        // low-end thump: low shelf driven by the sag envelope (S-007)
         const float depth = sagBase * juce::jlimit (0.0f, 1.0f, sagKnob);
-        const float gainDb = juce::jlimit (0.0f, 6.0f, depth * envelope * 8.0f);
+        const float gainDb = juce::jlimit (0.0f, 6.0f, depth * env * 8.0f);
         if (std::abs (gainDb - lastThumpDb) > 0.01f)
         {
             *thump.state = *juce::dsp::IIR::Coefficients<float>::makeLowShelf (

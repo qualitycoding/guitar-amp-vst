@@ -410,15 +410,14 @@ void GrimAmpAudioProcessor::processChunk (juce::AudioBuffer<float>& buffer,
             toneStack.setBandGains (bass, mid, treb, pres, dep);
             toneStack.processBlock (osBlock);        // ProcessorDuplicator: one filter set per channel
 
-            float envMax = 0.0f;
             for (size_t ch = 0; ch < nch; ++ch)
             {
+                float* d = osBlock.getChannelPointer (ch);
                 powerAmps[ch].setSag (sag);
-                powerAmps[ch].process (osBlock.getChannelPointer (ch), n);
-                envMax = juce::jmax (envMax, powerAmps[ch].getEnvelope());
+                powerAmps[ch].process (d, n);
+                auto oneCh = juce::dsp::AudioBlock<float> (&d, 1, (size_t) n);
+                powerAmps[ch].processThump (oneCh, sag);   // each instance's thump filter serves its own channel
             }
-
-            powerAmps[0].processThump (osBlock, sag, envMax);
         });
     }
 
