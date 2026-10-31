@@ -270,3 +270,15 @@ validation), `PresetManager.cpp` (legal file names, non-finite values dropped). 
 `permissions: contents: read`. The behaviour of the plugin changes only in the repaired cases
 (recall after prepare, silence after loud audio, hostile inputs); loudness calibration was not
 re-run.
+
+## D-001s — CR-004 / CR-005 (part) / CR-006 fixes
+
+Behaviour changes beyond the original plan: the gate, preamp and power amp are now instantiated per
+channel and the tone stack sees both channels (before, both channels shared one state, giving
+block-rate discontinuities and cross-channel gate/sag triggering); `PowerAmp::processThump` is
+unchanged in signature but rebuilds its shelf only on a >0.01 dB change; `ToneStack` and `PostEq`
+skip identical coefficient rebuilds; `CabIR` BinaryData lookup uses `strcmp`; `UserIRLoader` is a
+persistent worker with a lock-free hand-off. The sound of stereo material changes slightly (each
+channel is now processed independently as intended) and the S-009 loudness calibration was **not
+re-run**; mono and identical-L/R material should be unaffected apart from the removed block-boundary
+state jumps. Regression test `channel_independence` pins the new behaviour.

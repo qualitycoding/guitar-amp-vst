@@ -17,6 +17,9 @@ fixed or explicitly accepted before any release step. Status as of this commit:
 | CR-008 | High | `processBlock` splits blocks larger than the prepared maximum into chunks. | `oversize_block` (also under ASan/UBSan) |
 | CR-013 / AR-008 | Medium | Preset names are legalised to file names; a result outside the presets directory is refused. | `preset_list` |
 | CR-017 (part) | Medium | Workflow token limited to `contents: read`. | n/a |
+| CR-004 | High | One `NoiseGate`, `Preamp` and `PowerAmp` per channel (`std::array<...,2>`); the tone stack now processes the whole block through its `ProcessorDuplicator` (before, each channel went through a one-channel block and shared filter 0); each channel's thump shelf uses its own envelope (an intermediate version that shared one shelf failed the test and was corrected). | `channel_independence` (Eco and High: a channel's output is unchanged when the other channel's signal is removed) |
+| CR-006 | High | `UserIRLoader` rewritten: persistent worker thread, lock held only to store the latest request, supersede checked between steps, cooperative shutdown, finished buffer handed to the audio thread through one atomic slot (no mutex in `take()`). | `userir_loader` (supersede, non-blocking call, prompt shutdown) |
+| CR-005 (part) | High | Tone stack and post-EQ rebuild coefficients only when a knob moved; BinaryData lookup uses `strcmp` instead of building `juce::String`s; thump shelf rebuilt only on >0.01 dB change. | existing reference tests (`tonestack_reference`, `poweramp_reference`) |
 | AR-001 | High | Non-finite `value` attributes are dropped on preset load and session restore; `choiceIndex` is NaN-safe. | `nan_preset` |
 
 ## Open - needs a decision or a larger change (not hidden)
@@ -24,9 +27,7 @@ fixed or explicitly accepted before any release step. Status as of this commit:
 | ID | Sev | Why not done now | Proposed next step |
 |---|---|---|---|
 | **T-040 (new finding)** | **High / human gate** | With the gate now able to fail, the Windows import table shows `WININET.dll` and `WS2_32.dll` in `GrimAmp.vst3` (JUCE links its network code into every binary; `JUCE_USE_CURL=0` does not remove it). Frozen spec T-040 asks for an allowlist check. Allowlisting these DLLs relaxes a security test, so it is the maintainer's call. | Decide: (a) allowlist the two DLLs with this explanation and keep the static source gate, (b) prove no network function is reachable (link-time garbage collection / map file review), or (c) patch JUCE. CI stays red on this step until decided. **Maintainer chose (b) on 2026-10-31**; function-level evidence is in `reviews/T040_EVIDENCE.md` (no socket/connect/send/recv imports; WinInet HTTP/FTP client functions and getaddrinfo are present); the reachability proof is still open. |
-| CR-004 | High | Per-channel filter/gate/sag state means restructuring the DSP chain; changes the sound and the loudness calibration (S-009) and touches frozen-test expectations. | Plan as a new step with a loudness re-run; decide scope. |
-| CR-005 | High | Real-time allocations in `processBlock` (coefficient objects, oversampling rebuild, IR copy). Larger refactor; correctness unaffected. | New step; add a real-time-safety test (allocation hook) first. |
-| CR-006 | High | Loader locking / lost request. Needs a redesign of `UserIRLoader`. Partly unverified. | New step with a stress test; consider the CR-016 UI decision first. |
+| CR-005 (rest) | High | Still allocating on the audio thread: coefficient objects while a knob is moving (JUCE `makeX` returns a new object; an in-place biquad design would be needed), the oversampling rebuild on an Eco/High switch, the double copy of a user IR on swap, and `setLatencySamples` from the audio thread. Each needs a design change (pre-built oversampling objects, in-place coefficients, IR hand-off off the audio thread). `validation/automation-audit.md` still claims no allocations on the audio path and must be corrected. | New step with an allocation-hook test first. |
 | CR-009 / D-001m | Medium | 4096-sample box vs documented 5 ms window. Changes gate behaviour. | Maintainer decision (already flagged). |
 | CR-010, AR-004, CR-011, AR-002, AR-003 | Medium | Per-block smoothing staircase, crossfade jump, mono High-mode artefacts. Audible quality items; need DSP changes and listening checks. | Backlog with tests first (jump-size and mono tests proposed in the adversarial report). |
 | CR-012, AR-010 | Medium | No `reset()` override, tail length 0. | Small change; bundle with CR-004/005. |
@@ -39,6 +40,6 @@ fixed or explicitly accepted before any release step. Status as of this commit:
 
 ## Release impact
 
-Protocol 3.8 says Critical/High breaks block release. Of the High findings, CR-004, CR-005, CR-006
+Protocol 3.8 says Critical/High breaks block release. Of the High findings, CR-005 (rest)
 and the new T-040 finding remain open, so **G-002 (release) should not be requested** until each is
-fixed or explicitly accepted as a risk by the maintainer.
+fixed or explicitly accepted as a risk by the maintainer. (Updated after the CR-004/005/006 round: the remaining High items are CR-005 (rest) and the T-040 decision.)
