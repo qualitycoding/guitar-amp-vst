@@ -8,6 +8,7 @@
   crossfade (S-012). Offline only: JUCE_USE_CURL=0, no network (D-010).
 */
 #pragma once
+#include <array>
 #include <juce_audio_processors/juce_audio_processors.h>
 #include <juce_dsp/juce_dsp.h>
 
@@ -79,11 +80,12 @@ private:
     void updateLatency();
     juce::AudioBuffer<float>& getScratch (int numChannels, int numSamples);
 
-    gramp::NoiseGate gate;
+    // CR-004: one set of stateful DSP per channel (the two channels are independent signals)
+    std::array<gramp::NoiseGate, 2> gates;
     gramp::Boost boost;
-    gramp::Preamp preamp;
+    std::array<gramp::Preamp, 2> preamps;
     gramp::ToneStack toneStack;
-    gramp::PowerAmp powerAmp;
+    std::array<gramp::PowerAmp, 2> powerAmps;
     gramp::OversampledStage osStage;
     gramp::CabIR cabIR;
     gramp::PostEq postEq;

@@ -36,6 +36,7 @@ public:
     void reset()
     {
         env = 0.0f;
+        lastThumpDb = 0.0f;
         thump.reset();
     }
 
@@ -79,11 +80,23 @@ public:
 
     void processThump (juce::dsp::AudioBlock<float>& block, float sagKnob)
     {
+        processThump (block, sagKnob, env);
+    }
+
+    /*  Thump shelf driven by an externally supplied envelope (the processor passes the larger of
+        the per-channel envelopes, so one shelf serves both channels). Coefficients are rebuilt only
+        when the gain moved by more than 0.01 dB (CR-005: no per-block allocation). */
+    void processThump (juce::dsp::AudioBlock<float>& block, float sagKnob, float envelope)
+    {
         // low-end thump: low shelf driven by the sag envelope (S-007)
         const float depth = sagBase * juce::jlimit (0.0f, 1.0f, sagKnob);
-        const float gainDb = juce::jlimit (0.0f, 6.0f, depth * env * 8.0f);
-        *thump.state = *juce::dsp::IIR::Coefficients<float>::makeLowShelf (
-            sr, 110.0, 0.7071f, juce::Decibels::decibelsToGain (gainDb));
+        const float gainDb = juce::jlimit (0.0f, 6.0f, depth * envelope * 8.0f);
+        if (std::abs (gainDb - lastThumpDb) > 0.01f)
+        {
+            *thump.state = *juce::dsp::IIR::Coefficients<float>::makeLowShelf (
+                sr, 110.0, 0.7071f, juce::Decibels::decibelsToGain (gainDb));
+            lastThumpDb = gainDb;
+        }
         thump.process (juce::dsp::ProcessContextReplacing<float> (block));
     }
 
@@ -94,6 +107,7 @@ private:
     float knee = 1.2f, asym = 0.3f, sagBase = 0.3f, sagKnob01 = 0.5f;
     float atk = 0.0f, rel = 0.0f;
     float env = 0.0f;
+    float lastThumpDb = 0.0f;
     juce::dsp::ProcessorDuplicator<juce::dsp::IIR::Filter<float>,
                                    juce::dsp::IIR::Coefficients<float>> thump;
 };

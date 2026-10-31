@@ -710,6 +710,49 @@ struct UserIrLoaderMutationTest : juce::UnitTest
             }
         }
 
+        beginTest ("a newer request supersedes an older one and never blocks the caller (CR-006)");
+        {
+            const auto first = writeWav ("grimamp_mut_first.wav", 48000.0, 40000);
+            const auto second = writeWav ("grimamp_mut_second.wav", 48000.0, 1000);
+            gramp::UserIRLoader l;
+            l.loadFileAsync (first, 48000.0, nullptr);
+            const auto t0 = juce::Time::getMillisecondCounterHiRes();
+            l.loadFileAsync (second, 48000.0, nullptr);
+            expectLessThan (juce::Time::getMillisecondCounterHiRes() - t0, 200.0);
+
+            int lastLen = -1;
+            for (int i = 0; i < 400 && (l.isBusy() || lastLen < 0); ++i)
+            {
+                juce::AudioBuffer<float> out;
+                double rate = 0.0;
+                while (l.takeLoadedBuffer (out, rate))
+                    lastLen = out.getNumSamples();
+                juce::Thread::sleep (5);
+            }
+            {
+                juce::AudioBuffer<float> out;
+                double rate = 0.0;
+                while (l.takeLoadedBuffer (out, rate))
+                    lastLen = out.getNumSamples();
+            }
+            expectEquals (lastLen, 1000);
+            expect (! l.isBusy());
+            first.deleteFile();
+            second.deleteFile();
+        }
+
+        beginTest ("destroying the loader while a load is queued returns promptly (CR-006)");
+        {
+            const auto f = writeWav ("grimamp_mut_shutdown.wav", 24000.0, 40000);
+            const auto t0 = juce::Time::getMillisecondCounterHiRes();
+            {
+                gramp::UserIRLoader l;
+                l.loadFileAsync (f, 48000.0, nullptr);
+            }
+            expectLessThan (juce::Time::getMillisecondCounterHiRes() - t0, 5000.0);
+            f.deleteFile();
+        }
+
         beginTest ("a missing file never produces a buffer");
         {
             gramp::UserIRLoader l;
@@ -945,6 +988,64 @@ struct NanPresetTest : juce::UnitTest
     }
 };
 
+struct ChannelIndependenceTest : juce::UnitTest
+{
+    ChannelIndependenceTest() : juce::UnitTest ("channel_independence") {}
+
+    // renders `blocks` x 256 samples; left/right sources differ per processor
+    static juce::AudioBuffer<float> render (int osIndex, float leftAmp, float rightAmp)
+    {
+        GrimAmpAudioProcessor proc;
+        setParam (proc, gramp::param::irMix, 0.0f);            // no async convolution
+        setParam (proc, gramp::param::oversampling, (float) osIndex);
+        proc.prepareToPlay (kRate, 256);
+        juce::MidiBuffer midi;
+        juce::AudioBuffer<float> warm (2, 256);
+        for (int w = 0; w < 12; ++w)
+        {
+            warm.clear();
+            proc.processBlock (warm, midi);
+        }
+
+        const int blocks = 40;
+        juce::AudioBuffer<float> out (2, blocks * 256), b (2, 256);
+        for (int blk = 0; blk < blocks; ++blk)
+        {
+            for (int i = 0; i < 256; ++i)
+            {
+                const double t = (double) (blk * 256 + i) / kRate;
+                b.setSample (0, i, leftAmp * (float) std::sin (2.0 * juce::MathConstants<double>::pi * 196.0 * t));
+                b.setSample (1, i, rightAmp * (float) std::sin (2.0 * juce::MathConstants<double>::pi * 311.0 * t + 0.7));
+            }
+            proc.processBlock (b, midi);
+            for (int ch = 0; ch < 2; ++ch)
+                out.copyFrom (ch, blk * 256, b, ch, 0, 256);
+        }
+        return out;
+    }
+
+    void runTest() override
+    {
+        beginTest ("each channel is processed on its own state (CR-004)");
+
+        for (const int os : { 0, 1 })   // Eco and High
+        {
+            const auto a = render (os, 0.4f, 0.4f);
+            const auto b = render (os, 0.4f, 0.0f);    // right channel silent: left must not change
+            const auto c = render (os, 0.0f, 0.4f);    // left channel silent: right must not change
+
+            float errLeft = 0.0f, errRight = 0.0f;
+            for (int i = 0; i < a.getNumSamples(); ++i)
+            {
+                errLeft = juce::jmax (errLeft, std::abs (a.getSample (0, i) - b.getSample (0, i)));
+                errRight = juce::jmax (errRight, std::abs (a.getSample (1, i) - c.getSample (1, i)));
+            }
+            expectLessThan (errLeft, 1.0e-5f, "left depends on right (os=" + juce::String (os) + ")");
+            expectLessThan (errRight, 1.0e-5f, "right depends on left (os=" + juce::String (os) + ")");
+        }
+    }
+};
+
 BoostMutationTest tm1;
 NoiseGateMutationTest tm2;
 ToneStackMutationTest tm3;
@@ -955,4 +1056,5 @@ PresetListMutationTest tm7;
 StateRecallDspTest tm8;
 OversizeBlockTest tm9;
 NanPresetTest tm10;
+ChannelIndependenceTest tm11;
 } // namespace

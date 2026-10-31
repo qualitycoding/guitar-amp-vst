@@ -5,60 +5,106 @@
 
 namespace gramp
 {
+/*  One persistent worker thread. A request only stores the latest file/rate/callback under a
+    short lock and wakes the worker (CR-006): the message thread never waits for a load, a newer
+    request supersedes an older one (checked between the read, resample and publish steps), and
+    shutdown is cooperative. The finished buffer reaches the audio thread through a single atomic
+    slot, so take() never takes a mutex. */
 class UserIRLoader::Impl : private juce::Thread
 {
 public:
-    Impl() : juce::Thread ("GrimAmp user IR loader") {}
+    Impl() : juce::Thread ("GrimAmp user IR loader") { startThread(); }
 
     ~Impl() override
     {
-        stopThread (2000);
+        signalThreadShouldExit();
+        notify();
+        stopThread (10000);
+        delete slot.exchange (nullptr);
+        delete spent.exchange (nullptr);
     }
 
     void request (const juce::File& f, double rate, std::function<void (bool)> cb)
     {
         {
             const juce::ScopedLock sl (lock);
-            fileToLoad = f;
-            targetRate = rate;
-            callback = std::move (cb);
-            generation.fetch_add (1);
+            pending = Request { f, rate, std::move (cb), generation.fetch_add (1) + 1 };
+            hasPending = true;
             loading = true;
         }
-        startThread();
+        notify();
     }
 
     bool take (juce::AudioBuffer<float>& out, double& rateOut)
     {
-        if (! ready.exchange (false))
+        Result* r = slot.exchange (nullptr);
+        if (r == nullptr)
             return false;
 
-        const juce::ScopedLock sl (lock);
-        out = std::move (loadedBuffer);
-        rateOut = loadedRate;
+        out = std::move (r->buffer);
+        rateOut = r->rate;
+        delete spent.exchange (r);   // recycle: the worker frees it, not the audio thread (normally nullptr here)
         return true;
     }
 
-    bool busy() const noexcept { return loading.load() || ready.load(); }
+    bool busy() const noexcept { return loading.load() || slot.load() != nullptr; }
 
 private:
+    struct Request
+    {
+        juce::File file;
+        double rate = 44100.0;
+        std::function<void (bool)> callback;
+        int gen = 0;
+    };
+
+    struct Result
+    {
+        juce::AudioBuffer<float> buffer;
+        double rate = 44100.0;
+    };
+
     void run() override
+    {
+        while (! threadShouldExit())
+        {
+            wait (100);
+
+            for (;;)
+            {
+                Request req;
+                {
+                    const juce::ScopedLock sl (lock);
+                    if (! hasPending)
+                    {
+                        loading = false;
+                        break;
+                    }
+                    req = std::move (pending);
+                    hasPending = false;
+                }
+
+                if (threadShouldExit())
+                    return;
+
+                process (req);
+            }
+        }
+    }
+
+    bool superseded (const Request& req) const { return req.gen != generation.load(); }
+
+    void process (const Request& req)
     {
         juce::AudioFormatManager afm;
         afm.registerBasicFormats();
 
-        const juce::ScopedLock sl (lock);
-        const auto file = fileToLoad;
-        const auto rate = targetRate;
-        const auto gen = generation.load();
-        auto cb = callback;
-
         // Read the whole file (WAV or AIFF). Corrupt/truncated files simply
         // fail here -> previous IR stays active (T-012c).
-        std::unique_ptr<juce::AudioFormatReader> reader (afm.createReaderFor (file));
+        std::unique_ptr<juce::AudioFormatReader> reader (afm.createReaderFor (req.file));
         bool ok = false;
         juce::AudioBuffer<float> result;
-        double resultRate = rate;
+        const double rate = req.rate;
 
         if (reader != nullptr && reader->sampleRate > 0.0 && std::isfinite (reader->sampleRate))
         {
@@ -70,12 +116,12 @@ private:
             const double dstLenD = std::ceil ((double) len * rate / srcRate);
             const bool sizeOk = len > 0 && (! needsResample || (dstLenD >= 1.0 && dstLenD <= (double) maxLen));
 
-            if (sizeOk)
+            if (sizeOk && ! threadShouldExit() && ! superseded (req))
             {
                 juce::AudioBuffer<float> raw (2, len);
                 const bool readOk = reader->read (&raw, 0, len, 0, true, true);
 
-                if (readOk && needsResample)
+                if (readOk && needsResample && ! threadShouldExit() && ! superseded (req))
                 {
                     // offline resample to the host rate (AudioFormatReaderSource +
                     // ResamplingAudioSource, as suggested by D-004)
@@ -89,13 +135,13 @@ private:
                     juce::AudioSourceChannelInfo info (&result, 0, dstLen);
                     resampler.getNextAudioBlock (info);
                 }
-                else if (readOk)
+                else if (readOk && ! needsResample)
                 {
-                    result = raw;
+                    result = std::move (raw);
                 }
 
                 // reject non-finite content (a NaN/Inf IR would poison the convolution output)
-                bool finite = readOk;
+                bool finite = readOk && result.getNumSamples() > 0;
                 for (int ch = 0; finite && ch < result.getNumChannels(); ++ch)
                 {
                     const float* d = result.getReadPointer (ch);
@@ -103,34 +149,34 @@ private:
                         if (! std::isfinite (d[i])) { finite = false; break; }
                 }
 
-                resultRate = rate;
-                ok = finite
-                     && result.getNumSamples() > 0
-                     && ! result.hasBeenCleared();
+                ok = finite && ! result.hasBeenCleared();
             }
         }
 
-        if (gen == generation.load())   // a newer request superseded this one
-        {
-            loadedBuffer = std::move (result);
-            loadedRate = resultRate;
-            ready.store (ok);
-            loading.store (false);
+        if (superseded (req) || threadShouldExit())   // a newer request replaces this one; stay silent
+            return;
 
-            if (cb != nullptr)
-                juce::MessageManager::callAsync ([cb, ok] { cb (ok); });
+        if (ok)
+        {
+            auto* r = new Result { std::move (result), rate };
+            delete slot.exchange (r);               // an unread older result is replaced
+            delete spent.exchange (nullptr);
+        }
+
+        if (req.callback != nullptr)
+        {
+            auto cb = req.callback;
+            juce::MessageManager::callAsync ([cb, ok] { cb (ok); });
         }
     }
 
-    juce::CriticalSection lock;
-    juce::File fileToLoad;
-    double targetRate = 44100.0;
-    std::function<void (bool)> callback;
+    juce::CriticalSection lock;                 // guards `pending` / `hasPending` only, held briefly
+    Request pending;
+    bool hasPending = false;
     std::atomic<int> generation { 0 };
-    std::atomic<bool> loading { false }, ready { false };
-
-    juce::AudioBuffer<float> loadedBuffer;
-    double loadedRate = 44100.0;
+    std::atomic<bool> loading { false };
+    std::atomic<Result*> slot { nullptr };      // finished result, consumed by take()
+    std::atomic<Result*> spent { nullptr };     // consumed result awaiting deletion on the worker thread
 
     JUCE_DECLARE_NON_COPYABLE (Impl)
 };

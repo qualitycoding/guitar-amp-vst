@@ -161,7 +161,8 @@ void GrimAmpAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBloc
     currentOs      = pendingOs      = choiceIndex (apvts, gramp::param::oversampling);
 
     const juce::dsp::ProcessSpec spec { sampleRate, (juce::uint32) samplesPerBlock, 2 };
-    gate.prepare (sampleRate, samplesPerBlock);
+    for (auto& g : gates)
+        g.prepare (sampleRate, samplesPerBlock);
     boost.prepare (spec);
     cabIR.prepare (spec);
     postEq.prepare (spec);
@@ -169,9 +170,11 @@ void GrimAmpAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBloc
 
     const auto& row = gramp::voicings[currentVoicing];
     const double internalRate = osStage.getInternalSampleRate();
-    preamp.prepare (internalRate, row);
+    for (auto& p : preamps)
+        p.prepare (internalRate, row);
     toneStack.prepare (internalRate, row);
-    powerAmp.prepare (internalRate, row);
+    for (auto& p : powerAmps)
+        p.prepare (internalRate, row);
     loudnessGain = juce::Decibels::decibelsToGain (row.loudnessGainDb);
 
     dryScratch.setSize (2, samplesPerBlock);
@@ -250,9 +253,11 @@ void GrimAmpAudioProcessor::applySteppedParams()
         osStage.prepare (spec, currentOs == gramp::oversampling::highIndex);
         const double internalRate = osStage.getInternalSampleRate();
         const auto& row = gramp::voicings[currentVoicing];
-        preamp.prepare (internalRate, row);
+        for (auto& p : preamps)
+            p.prepare (internalRate, row);
         toneStack.prepare (internalRate, row);
-        powerAmp.prepare (internalRate, row);
+        for (auto& p : powerAmps)
+            p.prepare (internalRate, row);
         osStage.reset();
         updateLatency();
         switched = true;
@@ -263,9 +268,11 @@ void GrimAmpAudioProcessor::applySteppedParams()
         currentVoicing = juce::jlimit (0, gramp::numVoicings - 1, pendingVoicing);
         const double internalRate = osStage.getInternalSampleRate();
         const auto& row = gramp::voicings[currentVoicing];
-        preamp.setVoicing (internalRate, row, driveSm.getCurrentValue());
+        for (auto& p : preamps)
+            p.setVoicing (internalRate, row, driveSm.getCurrentValue());
         toneStack.setVoicing (internalRate, row);
-        powerAmp.setVoicing (internalRate, row);
+        for (auto& p : powerAmps)
+            p.setVoicing (internalRate, row);
         loudnessGain = juce::Decibels::decibelsToGain (row.loudnessGainDb);
         switched = true;
     }
@@ -353,11 +360,13 @@ void GrimAmpAudioProcessor::processChunk (juce::AudioBuffer<float>& buffer,
     // ---- noise gate ----
     if (norm (apvts, gramp::param::gateOn) >= 0.5f)
     {
-        gate.setSmoothedThreshold (gateThrSm.getNextValue());
+        const float gateThr = gateThrSm.getNextValue();
         gateThrSm.skip (numSamples - 1);
-        gate.processBlock (buffer.getWritePointer (0), numSamples);
-        if (numChannels > 1)
-            gate.processBlock (buffer.getWritePointer (1), numSamples);
+        for (int ch = 0; ch < numChannels; ++ch)
+        {
+            gates[(size_t) ch].setSmoothedThreshold (gateThr);
+            gates[(size_t) ch].processBlock (buffer.getWritePointer (ch), numSamples);
+        }
     }
 
     // ---- boost ----
@@ -386,21 +395,30 @@ void GrimAmpAudioProcessor::processChunk (juce::AudioBuffer<float>& buffer,
         osStage.process (block, [&] (juce::dsp::AudioBlock<float>& osBlock, double osRate)
         {
             juce::ignoreUnused (osRate);
-            preamp.setDrive (drive);
-            toneStack.setBandGains (bass, mid, treb, pres, dep);
-            powerAmp.setSag (sagSm.getCurrentValue());
+            // CR-004: every stateful stage runs once per channel on that channel's own state;
+            // stages are sequential, so stage-by-stage over all channels equals channel-by-channel.
+            const size_t nch = juce::jmin ((size_t) 2, osBlock.getNumChannels());
+            const int n = (int) osBlock.getNumSamples();
+            const float sag = sagSm.getCurrentValue();
 
-            for (size_t ch = 0; ch < osBlock.getNumChannels(); ++ch)
+            for (size_t ch = 0; ch < nch; ++ch)
             {
-                auto* d = osBlock.getChannelPointer (ch);
-                const int n = (int) osBlock.getNumSamples();
-                preamp.process (d, n);
-                auto oneCh = juce::dsp::AudioBlock<float> (&d, 1, (size_t) n);
-                toneStack.processBlock (oneCh);
-                powerAmp.process (d, n);
+                preamps[ch].setDrive (drive);
+                preamps[ch].process (osBlock.getChannelPointer (ch), n);
             }
 
-            powerAmp.processThump (osBlock, sagSm.getCurrentValue());
+            toneStack.setBandGains (bass, mid, treb, pres, dep);
+            toneStack.processBlock (osBlock);        // ProcessorDuplicator: one filter set per channel
+
+            float envMax = 0.0f;
+            for (size_t ch = 0; ch < nch; ++ch)
+            {
+                powerAmps[ch].setSag (sag);
+                powerAmps[ch].process (osBlock.getChannelPointer (ch), n);
+                envMax = juce::jmax (envMax, powerAmps[ch].getEnvelope());
+            }
+
+            powerAmps[0].processThump (osBlock, sag, envMax);
         });
     }
 
