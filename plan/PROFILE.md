@@ -1,5 +1,9 @@
 # PROFILE — Active Profiles & Applicability
 
+> **Protocol conformance amendment (D-001o, 2026-10-31):** adds the Rule 0.3
+> environment tag required by planning-protocol v3.6. Review:
+> `reviews/PROTOCOL_CONFORMANCE_v36.md`.
+
 ## Active profiles
 
 | Profile | Active | Justification |
@@ -15,6 +19,17 @@
 |---|---|---|
 | `math.exploration` | false | N/A (math profile inactive). |
 | `software.deploys` | **true** | The plan includes packaging installers and a public release of a distributed artifact (installers/binaries) → gate `G-002` and `plan/OPERATIONS.md` are required. |
+
+## Environment tag (Rule 0.3, protocol v3.6)
+
+**`[ephemeral]`** — the implementation environment was classified `ephemeral`
+by the §0.1 probe (first-hand evidence table in `plan/ENVIRONMENT.md` §0.1):
+/tmp wiped between turns, exec bits stripped on copy, background jobs reaped
+unless `setsid`-detached, the durable mount serves stale bytes and does not
+update mtimes, outbound git traffic blocked. Consequence: the §1.5
+Ephemeral-Environment Protections in `plan/ENVIRONMENT.md` are **active** for
+all remaining work on this run, and Rule 6 push cadence runs through the named
+bundle fallback (HANDOFF.md).
 
 ## N/A sections (produce no artifacts, impose no checks)
 
@@ -35,3 +50,5 @@
 ## Profile changes
 
 None. Recorded in `.checkpoints/state.json` under `profiles` and `mode_flags`.
+The `[ephemeral]` environment tag (added by D-001o) should also be recorded
+there under a new `environment_class` key on next checkpoint update.

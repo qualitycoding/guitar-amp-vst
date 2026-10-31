@@ -1,0 +1,25 @@
+# GrimAmp frozen parameter IDs (S-003, D-005).
+# One ID per line; '#' lines are comments. The count of IDs in this file is
+# the frozen parameter count checked by T-002. IDs must match ^[a-z0-9-]+$
+# and must never be renamed or reused after v1.0.0.
+input-gain
+gate-on
+gate-threshold
+boost-on
+boost-amount
+drive
+bass
+mid
+treble
+presence
+depth
+sag
+amp-voicing
+cab-ir
+oversampling
+mic-position
+ir-mix
+post-eq-on
+post-eq-low
+post-eq-high
+master

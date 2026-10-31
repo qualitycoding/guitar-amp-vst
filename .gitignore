@@ -1,0 +1,25 @@
+# Build output
+build/
+Builds/
+cmake-build-*/
+
+# IDE
+.idea/
+.vs/
+.vscode/
+*.user
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Python tooling caches
+__pycache__/
+*.pyc
+
+# Local validation output (rendered audio, screenshots)
+validation/renders/*.wav
+validation/*.png
+
+# Keep .checkpoints/ committed (protocol requirement) but not local snapshots
+.checkpoints/snapshots/
