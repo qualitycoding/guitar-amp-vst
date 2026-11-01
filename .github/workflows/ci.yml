@@ -137,6 +137,14 @@ jobs:
             network-imports.txt
           if-no-files-found: error
 
+      - name: Upload linker map (Windows, T-040 evidence)
+        if: always() && runner.os == 'Windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: t040-linker-map
+          path: build/**/GrimAmp*.map
+          if-no-files-found: error
+
       - name: Benchmark (renders; gates are applied by the next step)
         run: ctest --test-dir build --output-on-failure -C ${{ matrix.config }} -R bench
 
