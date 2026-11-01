@@ -27,3 +27,14 @@ What is NOT established
 Decision recorded as pending (see `reviews/REVIEW_DISPOSITION.md`): the maintainer chose "prove
 unreachable" on 2026-10-31. Until that proof or a different decision exists, the Windows T-040 gate
 stays failing; it is not weakened.
+
+## Resolution (2026-11-01)
+
+Compiling with function-level linking (`/Gy /Gw`) and linking with `/OPT:REF /OPT:ICF` (CMakeLists.txt, MSVC only) removed the
+network code from the binary. CI run 41304830804: `network-imports.txt` is empty and `GrimAmp.vst3` no longer imports `WININET.dll`
+or `WS2_32.dll` (the import table lists only kernel32, user32, gdi32, shell32, ole32, oleaut32, winmm, MSVCP140, VCRUNTIME and the
+CRT/graphics DLLs). The T-040 gate printed `T-040 windows pass` unweakened. The earlier import profile came from JUCE compiling all
+of `juce_core` into one translation unit, which the linker could not prune without function-level linking; the code was unreachable
+from GrimAmp, so it did not need a call-graph proof, only a linker setting that lets the linker remove it.
+
+The gate stays in place, so a future change that pulls network code back in fails the build.

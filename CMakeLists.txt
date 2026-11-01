@@ -103,11 +103,10 @@ juce_generate_juce_header(GrimAmp)
 # T-040 (issue #19): JUCE compiles every module into one translation unit; without function-level
 # linking the linker cannot drop unused code, so network-capable code (WebInputStream, Socket) and
 # its WININET / WS2_32 imports stay in the binary even though GrimAmp never calls it. /Gy /Gw put
-# each function / data item in its own COMDAT so /OPT:REF can remove what is unreachable; /MAP is
-# kept as evidence for the import check.
+# each function / data item in its own COMDAT so /OPT:REF can remove what is unreachable.
 if(MSVC)
     target_compile_options(GrimAmp PRIVATE /Gy /Gw)
-    target_link_options(GrimAmp PRIVATE /OPT:REF /OPT:ICF /MAP)
+    target_link_options(GrimAmp PRIVATE /OPT:REF /OPT:ICF)
 endif()
 
 # ==============================================================================

@@ -296,3 +296,7 @@ Reverted: a worker thread for `Convolution::loadImpulseResponse` (commit 7b7ea52
 failed once on macOS (96 kHz/1024) and once on Windows (96 kHz/64), and `automation_stress` passed after the
 revert (commit 2ab8a57). Likely cause (unverified): JUCE's convolution message queue assumes one producing
 thread. Consequence: cabinet IR changes still decode/copy on the audio thread.
+
+## D-001u — T-040 resolved by function-level linking (MSVC)
+
+`CMakeLists.txt` adds `/Gy /Gw` (compile) and `/OPT:REF /OPT:ICF` (link) for MSVC. This is a build-setting change, not a change to the frozen T-040 spec or its gate: the Windows binary no longer imports WININET/WS2_32 (CI run 41304830804), so the import-table check passes without an allowlist. Side effects to watch: a smaller binary, `/OPT:ICF` folds identical functions (function-pointer identity is not relied on), and the T-050 CPU numbers may shift slightly (not yet measured with the new flags).
