@@ -73,7 +73,7 @@ def lint_root(root):
 
 BUILTINS = {"set", "test", "if", "fi", "then", "else", "echo", "mkdir", "cp", "cd", "export", "exit", "[", "tee",
             "grep", "git", "curl", "sudo", "!", "for", "do", "done", "cat", "ls", "{", "}", "(", ")", "||", "&&", "python3",
-            "python", "PY", "import", "rows", "total", "survived", "score", "if", "print", "sys.exit", "#"}
+            "python", "PY", "import", "rows", "total", "survived", "score", "if", "print", "sys.exit", "#", "elif", "else"}
 
 
 def ledger_check(root):
@@ -104,6 +104,8 @@ def ledger_check(root):
                     continue
                 if in_py:
                     in_py = l != "PY"
+                    continue
+                if re.match(r"^[A-Za-z_][A-Za-z0-9_]*=", l):        # variable assignment, not a tool
                     continue
                 tok = re.split(r"[\s=]", l, maxsplit=1)[0] if l else ""
                 tok = tok.strip("\\")
