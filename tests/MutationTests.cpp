@@ -19,6 +19,7 @@
 #include "DSP/CabIR.h"
 #include "DSP/UserIRLoader.h"
 #include "DSP/NoiseGate.h"
+#include "DSP/PostEq.h"
 #include "DSP/PowerAmp.h"
 #include "DSP/ToneStack.h"
 #include "DSP/Voicings.h"
@@ -1046,6 +1047,50 @@ struct ChannelIndependenceTest : juce::UnitTest
     }
 };
 
+struct PostEqMutationTest : juce::UnitTest
+{
+    PostEqMutationTest() : juce::UnitTest ("posteq_reference") {}
+
+    void runTest() override
+    {
+        beginTest ("post EQ follows its shelves, including gain changes and unchanged repeats (CR-005 cache)");
+
+        gramp::PostEq eq;
+        eq.prepare ({ kRate, 128, 2 });
+
+        Filter lo[2], hi[2];
+        const auto in0 = sine (128 * 6, 90.0, 0.3f);
+        const auto in1 = sine (128 * 6, 6000.0, 0.3f);
+
+        // blocks 0-1 gains (3, -2); blocks 2-3 same again; block 4 changes low only; block 5 changes high only
+        const float lows[6]  = { 3.0f, 3.0f, 3.0f, 3.0f, -4.0f, -4.0f };
+        const float highs[6] = { -2.0f, -2.0f, -2.0f, -2.0f, -2.0f, 5.0f };
+
+        float maxErr = 0.0f;
+        for (int blk = 0; blk < 6; ++blk)
+        {
+            juce::AudioBuffer<float> b (2, 128);
+            b.copyFrom (0, 0, in0.data() + blk * 128, 128);
+            b.copyFrom (1, 0, in1.data() + blk * 128, 128);
+            juce::dsp::AudioBlock<float> block (b);
+            eq.processBlock (block, lows[blk], highs[blk]);
+
+            for (int ch = 0; ch < 2; ++ch)
+            {
+                lo[ch].coefficients = Coeffs::makeLowShelf (kRate, 120.0, 0.7071f, juce::Decibels::decibelsToGain (lows[blk]));
+                hi[ch].coefficients = Coeffs::makeHighShelf (kRate, 4500.0, 0.7071f, juce::Decibels::decibelsToGain (highs[blk]));
+                const auto& src = ch == 0 ? in0 : in1;
+                for (int i = 0; i < 128; ++i)
+                {
+                    const float y = hi[ch].processSample (lo[ch].processSample (src[(size_t) (blk * 128 + i)]));
+                    maxErr = juce::jmax (maxErr, std::abs (y - b.getSample (ch, i)));
+                }
+            }
+        }
+        expectLessThan (maxErr, kTol);
+    }
+};
+
 BoostMutationTest tm1;
 NoiseGateMutationTest tm2;
 ToneStackMutationTest tm3;
@@ -1057,4 +1102,5 @@ StateRecallDspTest tm8;
 OversizeBlockTest tm9;
 NanPresetTest tm10;
 ChannelIndependenceTest tm11;
+PostEqMutationTest tm12;
 } // namespace
