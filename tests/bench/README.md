@@ -8,6 +8,10 @@
 | T-050 budget: worst case `Frost/High` <= 15 % of one core | `bench-targets.json` | `windows-latest` (enforced); `macos-latest` reported only, relaxed by D-001n |
 | T-050 regression: any voicing/mode > baseline x 1.20 and > 2 percentage points above it | `baseline-T050.json` | `windows-latest` (enforced); `macos-latest` reported only |
 
+Each runner executes the bench three times; the gates use the per-voicing **median** CPU % (one noisy run does not
+decide, a consistently high result still fails) and the latency verdict must pass in every run. The budget and tolerance
+are unchanged.
+
 Post-conditions: the results file must exist, be non-empty, parse, and contain all 7 voicings x 2
 modes and both latency entries; otherwise the step fails.
 

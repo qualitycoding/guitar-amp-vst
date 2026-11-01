@@ -300,3 +300,11 @@ thread. Consequence: cabinet IR changes still decode/copy on the audio thread.
 ## D-001u — T-040 resolved by function-level linking (MSVC)
 
 `CMakeLists.txt` adds `/Gy /Gw` (compile) and `/OPT:REF /OPT:ICF` (link) for MSVC. This is a build-setting change, not a change to the frozen T-040 spec or its gate: the Windows binary no longer imports WININET/WS2_32 (CI run 41304830804), so the import-table check passes without an allowlist. Side effects to watch: a smaller binary, `/OPT:ICF` folds identical functions (function-pointer identity is not relied on), and the T-050 CPU numbers may shift slightly (not yet measured with the new flags).
+
+## D-001v — T-050 gate uses the median of three bench runs
+
+Maintainer-approved (2026-11-01) after the Windows budget gate read 15.08 % (Frost/High) against 15.0 % on a run where the
+same code had read 14.4-14.5 % before. The CI step runs `grimamp_bench` three times and `tools/ci/check_bench.py` gates on the
+median per voicing/mode; latency must pass in all three. The budget (15 %), the regression tolerance (20 %) and the baseline
+are unchanged; relaxing any of them remains a maintainer decision. Cost: about 2.5 extra minutes per OS. The raw runs and the
+median are uploaded in the `bench-results-<os>` artifact.

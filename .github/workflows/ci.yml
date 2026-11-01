@@ -137,17 +137,27 @@ jobs:
             network-imports.txt
           if-no-files-found: error
 
-      - name: Benchmark (renders; gates are applied by the next step)
-        run: ctest --test-dir build --output-on-failure -C ${{ matrix.config }} -R bench
+      # T-050: hosted runners are noisy (K-20261029T030800Z), so the bench runs three times and the gate
+      # uses the per-voicing MEDIAN; latency must pass in every run. The budget itself is unchanged.
+      - name: Benchmark (3 runs; gates are applied by the next step)
+        shell: bash
+        run: |
+          for i in 1 2 3; do
+            ctest --test-dir build --output-on-failure -C ${{ matrix.config }} -R bench
+            cp build/tests/bench-results.json build/tests/bench-results-run$i.json
+          done
 
       # Rule 14 / A-3..A-5: T-051 latency and the per-runner-class T-050 budget and regression
       # gates (tests/bench/bench-targets.json, baseline-T050.json). The macOS budget is relaxed by
       # maintainer decision D-001n and only reported. The script always writes a baseline candidate.
-      - name: Check bench gates (T-050 / T-051)
+      - name: Check bench gates (T-050 / T-051, median of 3)
         shell: bash
         run: |
           ${{ runner.os == 'Windows' && 'python' || 'python3' }} tools/ci/check_bench.py --runner ${{ matrix.os }} \
-              --results build/tests/bench-results.json \
+              --results build/tests/bench-results-run1.json \
+              --results build/tests/bench-results-run2.json \
+              --results build/tests/bench-results-run3.json \
+              --merged-out build/tests/bench-results-median.json \
               --candidate-out build/tests/bench-baseline-candidate.json
 
       - name: Upload bench results
@@ -156,7 +166,10 @@ jobs:
         with:
           name: bench-results-${{ matrix.os }}
           path: |
-            build/tests/bench-results.json
+            build/tests/bench-results-run1.json
+            build/tests/bench-results-run2.json
+            build/tests/bench-results-run3.json
+            build/tests/bench-results-median.json
             build/tests/bench-baseline-candidate.json
           if-no-files-found: error
 

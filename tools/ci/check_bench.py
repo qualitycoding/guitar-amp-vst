@@ -5,13 +5,14 @@ Reads bench-results.json, tests/bench/bench-targets.json and tests/bench/baselin
 Post-conditions (Rule 14): the results file exists, is non-empty, parses, and holds every
 voicing x mode plus both latency entries; otherwise the check fails.
 
-  check_bench.py --runner windows-latest --results build/tests/bench-results.json \
+  check_bench.py --runner windows-latest --results run1.json [--results run2.json ...] \
                  [--candidate-out build/tests/bench-baseline-candidate.json]
   check_bench.py --selftest
 """
 import json
 import os
 import pathlib
+import statistics
 import sys
 
 VOICINGS = ["Tweed", "Plexi", "JCM800", "Recto", "5150", "Chainsaw", "Frost"]
@@ -26,6 +27,25 @@ def load_json(path, what):
         return json.loads(p.read_text())
     except ValueError as e:
         raise SystemExit(f"FAIL: {what} does not parse: {e}")
+
+
+def merge_runs(runs):
+    """Median CPU % per voicing/mode over several bench runs (hosted-runner noise), latency must pass in all."""
+    if len(runs) == 1:
+        return runs[0]
+    merged = {"machine": runs[0].get("machine"), "runs": len(runs), "voicings": {}, "latency": {}}
+    for key in runs[0].get("voicings", {}):
+        vals = [r["voicings"][key]["cpuPercent"] for r in runs if key in r.get("voicings", {})]
+        if len(vals) != len(runs):
+            continue                      # a missing key in any run is reported by evaluate()
+        merged["voicings"][key] = {"cpuPercent": statistics.median(vals), "samples": vals}
+    for mode in runs[0].get("latency", {}):
+        entries = [r["latency"][mode] for r in runs if mode in r.get("latency", {})]
+        if len(entries) != len(runs):
+            continue
+        merged["latency"][mode] = {"reported": entries[0].get("reported"), "measured": entries[0].get("measured"),
+                                   "passes": all(bool(e.get("passes")) for e in entries)}
+    return merged
 
 
 def evaluate(results, targets, baseline, runner):
@@ -126,6 +146,13 @@ def selftest():
         ("bootstrap without baseline", evaluate(mk(), tg, {"runners": {}}, "w")[0], False),
         ("unknown runner class", evaluate(mk(), tg, bl, "zzz")[0], True),
     ]
+    # median-of-N: one noisy run must not decide the verdict, a consistently high run must
+    outlier = merge_runs([mk(12.0), mk(12.0), mk(19.0)])
+    cases.append(("median ignores a single outlier run", evaluate(outlier, tg, bl, "w")[0], False))
+    high = merge_runs([mk(16.0), mk(16.5), mk(11.0)])
+    cases.append(("median still fails a consistently high result", evaluate(high, tg, bl, "w")[0], True))
+    bad_lat = merge_runs([mk(), mk(lat_ok=False), mk()])
+    cases.append(("latency must pass in every run", evaluate(bad_lat, tg, bl, "m")[0], True))
     bad = [n for n, f, want in cases if bool(f) != want]
     for n, f, want in cases:
         print(f"  {'ok ' if bool(f) == want else 'BAD'} {n}")
@@ -140,13 +167,17 @@ def main(argv):
     runner = arg("--runner")
     if not runner:
         raise SystemExit("usage: check_bench.py --runner <label> --results <file> [--candidate-out <file>]")
-    results = load_json(arg("--results", "build/tests/bench-results.json"), "bench results")
+    result_paths = [argv[i + 1] for i, a in enumerate(argv) if a == "--results"] or ["build/tests/bench-results.json"]
+    results = merge_runs([load_json(p, "bench results") for p in result_paths])
     targets = load_json(arg("--targets", "tests/bench/bench-targets.json"), "bench targets")
     bpath = arg("--baseline", "tests/bench/baseline-T050.json")
     baseline = load_json(bpath, "bench baseline") if pathlib.Path(bpath).is_file() else None
     fails, lines, candidate = evaluate(results, targets, baseline, runner)
     out = "\n".join(lines)
     print(out)
+    merged_out = arg("--merged-out")
+    if merged_out:
+        pathlib.Path(merged_out).write_text(json.dumps(results, indent=2))
     cand_path = arg("--candidate-out")
     if cand_path and candidate is not None:
         pathlib.Path(cand_path).write_text(json.dumps(candidate, indent=2))
