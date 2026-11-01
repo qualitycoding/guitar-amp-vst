@@ -12,6 +12,7 @@
 */
 #pragma once
 #include <atomic>
+#include <cstdio>
 #include <cstring>
 #include <juce_dsp/juce_dsp.h>
 #include "UserIRLoader.h"
@@ -203,6 +204,13 @@ private:
     }
 
     void run() override
+    {
+        try { runLoop(); }
+        catch (const std::exception& e) { std::fprintf (stderr, "GrimAmp CabIR worker exception: %s\n", e.what()); throw; }
+        catch (...) { std::fprintf (stderr, "GrimAmp CabIR worker: unknown exception\n"); throw; }
+    }
+
+    void runLoop()
     {
         while (! threadShouldExit())
         {
