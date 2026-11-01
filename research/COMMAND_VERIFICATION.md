@@ -58,3 +58,5 @@ macOS 15.60 % reported as RELAXED (D-001n), latency PASS on both; the `pgrep` AU
 sanitizer post-conditions; the `lint-ci` job (workflow lint, ledger lint, both self-tests); the
 mutation gate with its new post-conditions; and `dumpbin` located under the Visual Studio
 install, with `T-040 windows pass` printed (the first time T-040 has really run on Windows).
+
+**Mutation workflow (D-001w), observed 2026-11-01:** run 41332376124 (docs-only push) scope step reported `not-applicable`, the gate printed it and passed in about a minute; run 41332577866 (one-line change in `Source/DSP/Boost.h`) mutated only that file (9 mutants, 8 killed, matching its full-run score), the per-file gate passed, and the job took about 11 minutes. The full-run path and the nightly schedule are still unobserved (full run 941782a in progress when this was written).

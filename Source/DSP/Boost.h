@@ -1,4 +1,4 @@
-/*  [mutation-workflow probe: comment-only change to exercise the incremental path]
+/*
 
   Boost.h — TS-style boost stage (S-004).
 
