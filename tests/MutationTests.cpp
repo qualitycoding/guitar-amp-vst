@@ -1256,6 +1256,19 @@ struct NoAudioThreadAllocationTest : juce::UnitTest
     {
         beginTest ("processBlock does not allocate or free while knobs move and the amp is re-voiced (CR-005)");
 
+        // the probe itself must be able to fail: a deliberate allocation and free are counted
+        {
+            static volatile char sink;
+            alloc_probe::count = 0;
+            alloc_probe::tracking = true;
+            std::unique_ptr<char[]> probe (new char[64]);
+            probe[0] = 1;
+            sink = probe[0];
+            probe.reset();
+            alloc_probe::tracking = false;
+            expectGreaterThan (alloc_probe::count, 1L);
+        }
+
         GrimAmpAudioProcessor proc;
         setParam (proc, gramp::param::irMix, 0.0f);          // cabinet IR switching is checked separately
         setParam (proc, gramp::param::postEqOn, 1.0f);
