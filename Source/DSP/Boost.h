@@ -1,4 +1,5 @@
-/*
+/*  [mutation-workflow probe: comment-only change to exercise the incremental path]
+
   Boost.h — TS-style boost stage (S-004).
 
   Input high-pass ~720 Hz, symmetric soft clip (tanh), output low-pass; the
