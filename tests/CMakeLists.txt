@@ -67,7 +67,7 @@ set (GRIMAMP_UNIT_TESTS
     denormals preset_roundtrip state_restore smoothing gestures ir_loading
     boost_reference gate_reference tonestack_reference poweramp_reference posteq_reference
     cabir_selection userir_loader preset_list state_recall_dsp oversize_block nan_preset channel_independence
-    biquad_design retune_equivalence no_audio_alloc no_audio_alloc_cab
+    biquad_design retune_equivalence no_audio_alloc no_audio_alloc_cab automation_stress
 )
 
 foreach (t ${GRIMAMP_UNIT_TESTS})

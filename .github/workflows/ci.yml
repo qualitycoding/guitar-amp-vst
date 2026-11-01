@@ -209,7 +209,7 @@ jobs:
               skeleton param_inventory param_ranges sine_sanity harmonics preset_roundtrip \
               state_restore smoothing gestures ir_loading \
               boost_reference gate_reference tonestack_reference poweramp_reference posteq_reference \
-              cabir_selection userir_loader preset_list state_recall_dsp oversize_block nan_preset channel_independence biquad_design retune_equivalence 2>&1 | tee asan.log
+              cabir_selection userir_loader preset_list state_recall_dsp oversize_block nan_preset channel_independence biquad_design retune_equivalence automation_stress 2>&1 | tee asan.log
 
       - name: Fuzz presets under sanitizers (T-013 corpus, seed 42)
         env:

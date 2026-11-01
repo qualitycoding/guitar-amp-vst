@@ -1387,6 +1387,58 @@ struct NoAudioThreadAllocationCabTest : juce::UnitTest
     }
 };
 
+struct AutomationStressTest : juce::UnitTest
+{
+    AutomationStressTest() : juce::UnitTest ("automation_stress") {}
+
+    void runTest() override
+    {
+        beginTest ("random automation of every parameter in 32-sample sub-blocks does not throw or corrupt memory");
+
+        for (const double rate : { 44100.0, 96000.0 })
+            for (const int block : { 64, 1024 })
+            {
+                try
+                {
+                    GrimAmpAudioProcessor proc;
+                    proc.prepareToPlay (rate, block);
+                    juce::Random rng (12345 + block);
+                    juce::MidiBuffer midi;
+                    juce::AudioBuffer<float> buf (2, block);
+                    const auto& params = proc.getParameters();
+
+                    for (int iter = 0; iter < 200; ++iter)
+                    {
+                        for (int i = 0; i < block; ++i)
+                        {
+                            const float v = 0.3f * (float) std::sin (2.0 * juce::MathConstants<double>::pi * 196.0 * (iter * block + i) / rate);
+                            buf.setSample (0, i, v);
+                            buf.setSample (1, i, v);
+                        }
+                        for (int pos = 0; pos < block; pos += 32)
+                        {
+                            for (auto* p : params)
+                                if (rng.nextInt (4) == 0)
+                                    p->setValueNotifyingHost (rng.nextFloat());
+                            juce::AudioBuffer<float> sub (buf.getArrayOfWritePointers(), 2, pos, juce::jmin (32, block - pos));
+                            proc.processBlock (sub, midi);
+                        }
+                        if (iter % 50 == 49)
+                            proc.prepareToPlay (rate, block);          // re-prepare mid-run, as hosts do
+                    }
+                }
+                catch (const std::exception& e)
+                {
+                    expect (false, juce::String ("exception at rate ") + juce::String (rate) + " block " + juce::String (block) + ": " + e.what());
+                }
+                catch (...)
+                {
+                    expect (false, juce::String ("unknown exception at rate ") + juce::String (rate) + " block " + juce::String (block));
+                }
+            }
+    }
+};
+
 BoostMutationTest tm1;
 NoiseGateMutationTest tm2;
 ToneStackMutationTest tm3;
@@ -1403,4 +1455,5 @@ BiquadDesignTest tm13;
 RetuneEquivalenceTest tm14;
 NoAudioThreadAllocationTest tm15;
 NoAudioThreadAllocationCabTest tm16;
+AutomationStressTest tm17;
 } // namespace
