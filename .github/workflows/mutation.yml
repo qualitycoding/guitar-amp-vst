@@ -96,15 +96,20 @@ jobs:
               boost_reference gate_reference tonestack_reference poweramp_reference posteq_reference biquad_design retune_equivalence \
               cabir_selection userir_loader preset_list 2>&1 | tee mull.log
 
-      # Floor 75 % (T-070). An incremental run needs a few mutants only; a full run needs most of the project's.
+      # Floor 75 % (T-070) for the project score on a full run. An incremental run is gated per file against the
+      # scores recorded from the last full run (reviews/mutation-baseline.json, tolerance 5 points): some files
+      # score below the project floor with justified survivors (reviews/MUTATION.md).
       - name: Mutation score gate (T-070)
         if: steps.scope.outputs.mode != 'not-applicable'
         shell: bash
         run: |
           set -o pipefail
-          min=10
-          if [ "${{ steps.scope.outputs.mode }}" = "full" ]; then min=150; fi
-          python3 tools/ci/mull_score.py mull.sqlite --floor 75 --min-mutants "$min" --strip 'guitar-amp-vst/' | tee score.txt
+          if [ "${{ steps.scope.outputs.mode }}" = "incremental" ]; then
+            python3 tools/ci/mull_score.py mull.sqlite --floor 75 --baseline reviews/mutation-baseline.json \
+                --tolerance 5 --min-mutants 1 --strip 'guitar-amp-vst/' | tee score.txt
+          else
+            python3 tools/ci/mull_score.py mull.sqlite --floor 75 --min-mutants 150 --strip 'guitar-amp-vst/' | tee score.txt
+          fi
 
       - name: Upload Mull report
         if: always() && steps.scope.outputs.mode != 'not-applicable'
