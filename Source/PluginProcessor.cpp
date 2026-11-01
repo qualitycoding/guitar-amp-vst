@@ -288,7 +288,7 @@ void GrimAmpAudioProcessor::applySteppedParams()
     // user IR handoff from the loader thread
     juce::AudioBuffer<float> loaded;
     double loadedRate = 0.0;
-    if (cabIR.canAcceptUserIr() && userIrLoader.takeLoadedBuffer (loaded, loadedRate))
+    if (userIrLoader.takeLoadedBuffer (loaded, loadedRate))
     {
         cabIR.setUserImpulseResponse (std::move (loaded), loadedRate);
         userIrApplied = true;

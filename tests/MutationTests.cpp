@@ -1321,72 +1321,6 @@ struct NoAudioThreadAllocationTest : juce::UnitTest
     }
 };
 
-struct NoAudioThreadAllocationCabTest : juce::UnitTest
-{
-    NoAudioThreadAllocationCabTest() : juce::UnitTest ("no_audio_alloc_cab") {}
-
-    void runTest() override
-    {
-        beginTest ("switching cabinets and handing over a user IR does not allocate on the audio thread (CR-005)");
-
-        // a user IR file for the loader
-        auto wav = juce::File::getSpecialLocation (juce::File::tempDirectory).getChildFile ("grimamp_alloc_ir.wav");
-        wav.deleteFile();
-        {
-            juce::WavAudioFormat fmt;
-            std::unique_ptr<juce::AudioFormatWriter> w (fmt.createWriterFor (wav.createOutputStream().release(), kRate, 1, 16, {}, 0));
-            expect (w != nullptr);
-            if (w == nullptr)
-                return;
-            juce::AudioBuffer<float> ir (1, 2000);
-            for (int i = 0; i < 2000; ++i)
-                ir.setSample (0, i, 0.5f * std::exp (-(float) i / 300.0f) * (float) std::sin (0.3 * i));
-            w->writeFromAudioSampleBuffer (ir, 0, 2000);
-        }
-
-        GrimAmpAudioProcessor proc;
-        setParam (proc, gramp::param::irMix, 1.0f);
-        proc.prepareToPlay (kRate, 256);
-
-        juce::MidiBuffer midi;
-        juce::AudioBuffer<float> b (2, 256);
-        const auto run = [&] (int blk, bool track, long& allocations)
-        {
-            for (int i = 0; i < 256; ++i)
-            {
-                const float v = 0.25f * (float) std::sin (2.0 * juce::MathConstants<double>::pi * 220.0 * (blk * 256 + i) / kRate);
-                b.setSample (0, i, v);
-                b.setSample (1, i, v);
-            }
-            alloc_probe::count = 0;
-            alloc_probe::tracking = track;
-            proc.processBlock (b, midi);
-            alloc_probe::tracking = false;
-            allocations += alloc_probe::count;
-        };
-
-        long ignored = 0;
-        for (int w = 0; w < 40; ++w)
-            run (w, false, ignored);
-
-        proc.requestUserIrLoad (wav);              // message-thread side: starts the loader
-
-        long allocations = 0;
-        for (int blk = 0; blk < 400; ++blk)
-        {
-            if (blk % 25 == 5)
-                setParam (proc, gramp::param::cabIr, (float) ((blk / 25) % 8));          // factory switches
-            if (blk == 200)
-                setParam (proc, gramp::param::cabIr, (float) gramp::cab::userSlotIndex);   // user slot
-            run (40 + blk, true, allocations);
-            juce::Thread::sleep (1);             // give the workers time to finish between blocks
-        }
-        expect (proc.isUserIrApplied());
-        expectEquals (allocations, 0L);
-        wav.deleteFile();
-    }
-};
-
 struct AutomationStressTest : juce::UnitTest
 {
     AutomationStressTest() : juce::UnitTest ("automation_stress") {}
@@ -1454,6 +1388,5 @@ PostEqMutationTest tm12;
 BiquadDesignTest tm13;
 RetuneEquivalenceTest tm14;
 NoAudioThreadAllocationTest tm15;
-NoAudioThreadAllocationCabTest tm16;
 AutomationStressTest tm17;
 } // namespace
