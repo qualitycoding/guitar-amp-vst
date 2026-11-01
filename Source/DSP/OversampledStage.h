@@ -20,25 +20,30 @@ public:
     {
         baseRate = baseSpec.sampleRate;
         channels = (int) baseSpec.numChannels;
-        high = highQuality;
 
-        if (high)
-        {
-            oversampling = std::make_unique<juce::dsp::Oversampling<float>> (
-                baseSpec.numChannels, 4,
-                juce::dsp::Oversampling<float>::filterHalfBandPolyphaseIIR,
-                false);
-            /*  JUCE 8 Oversampling manages only buffer sizing (no prepare()):
-                the base-rate max block size is fixed here; the oversampled rate
-                is implied (factor x) for the wrapped processing. */
-            oversampling->initProcessing ((size_t) baseSpec.maximumBlockSize);
-            latency = (int) oversampling->getLatencyInSamples();
-        }
-        else
-        {
-            oversampling.reset();
-            latency = 0;
-        }
+        // CR-005: the 4x oversampler is always built here (message thread) so that switching between
+        // Eco and High at run time (setHighQuality) allocates nothing.
+        oversampling = std::make_unique<juce::dsp::Oversampling<float>> (
+            baseSpec.numChannels, 4,
+            juce::dsp::Oversampling<float>::filterHalfBandPolyphaseIIR,
+            false);
+        /*  JUCE 8 Oversampling manages only buffer sizing (no prepare()):
+            the base-rate max block size is fixed here; the oversampled rate
+            is implied (factor x) for the wrapped processing. */
+        oversampling->initProcessing ((size_t) baseSpec.maximumBlockSize);
+        highLatency = (int) oversampling->getLatencyInSamples();
+
+        high = highQuality;
+        latency = high ? highLatency : 0;
+    }
+
+    /*  Audio-thread safe Eco/High switch: no allocation, the oversampler memory is cleared. */
+    void setHighQuality (bool highQuality) noexcept
+    {
+        high = highQuality && oversampling != nullptr;
+        latency = high ? highLatency : 0;
+        if (oversampling != nullptr)
+            oversampling->reset();
     }
 
     void reset() noexcept
@@ -74,6 +79,7 @@ private:
     int channels = 2;
     bool high = false;
     int latency = 0;
+    int highLatency = 0;
     std::unique_ptr<juce::dsp::Oversampling<float>> oversampling;
 };
 

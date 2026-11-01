@@ -249,16 +249,15 @@ void GrimAmpAudioProcessor::applySteppedParams()
     if (pendingOs != currentOs)
     {
         currentOs = pendingOs;
-        const juce::dsp::ProcessSpec spec { currentRate, (juce::uint32) getBlockSize(), 2 };
-        osStage.prepare (spec, currentOs == gramp::oversampling::highIndex);
+        // CR-005: no prepare() here - the oversampler exists already; retune the stages in place
+        osStage.setHighQuality (currentOs == gramp::oversampling::highIndex);
         const double internalRate = osStage.getInternalSampleRate();
         const auto& row = gramp::voicings[currentVoicing];
         for (auto& p : preamps)
-            p.prepare (internalRate, row);
-        toneStack.prepare (internalRate, row);
+            p.setVoicing (internalRate, row, driveSm.getCurrentValue());
+        toneStack.setVoicing (internalRate, row);
         for (auto& p : powerAmps)
-            p.prepare (internalRate, row);
-        osStage.reset();
+            p.setVoicing (internalRate, row);
         updateLatency();
         switched = true;
     }

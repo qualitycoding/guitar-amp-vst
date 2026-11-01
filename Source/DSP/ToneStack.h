@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <iterator>
 #include <juce_dsp/juce_dsp.h>
+#include "BiquadDesign.h"
 #include "Voicings.h"
 
 namespace gramp
@@ -58,18 +59,13 @@ public:
             return (knob - 0.5f) * rangeDb;
         };
 
-        *bass.state    = *juce::dsp::IIR::Coefficients<float>::makePeakFilter (
-            sr, current.bassFreq, 0.9f, juce::Decibels::decibelsToGain (mapRange (bassK, current.bassRangeDb)));
-        *mid.state     = *juce::dsp::IIR::Coefficients<float>::makePeakFilter (
-            sr, current.midFreq, 0.9f, juce::Decibels::decibelsToGain (mapRange (midK, current.midRangeDb)));
-        *treble.state  = *juce::dsp::IIR::Coefficients<float>::makePeakFilter (
-            sr, current.trebleFreq, 0.9f, juce::Decibels::decibelsToGain (mapRange (trebleK, current.trebleRangeDb)));
-        *presence.state = *juce::dsp::IIR::Coefficients<float>::makeHighShelf (
-            sr, current.presenceFreq, 0.7071f,
-            juce::Decibels::decibelsToGain (presenceK * current.presenceRangeDb));
-        *depth.state    = *juce::dsp::IIR::Coefficients<float>::makeLowShelf (
-            sr, current.depthFreq, 0.7071f,
-            juce::Decibels::decibelsToGain (depthK * current.depthRangeDb));
+        // CR-005: designed in place, no heap allocation
+        const auto g = [] (float db) { return juce::Decibels::decibelsToGain (db); };
+        biquad::peak (*bass.state,   sr, current.bassFreq,   0.9f, g (mapRange (bassK,   current.bassRangeDb)));
+        biquad::peak (*mid.state,    sr, current.midFreq,    0.9f, g (mapRange (midK,    current.midRangeDb)));
+        biquad::peak (*treble.state, sr, current.trebleFreq, 0.9f, g (mapRange (trebleK, current.trebleRangeDb)));
+        biquad::highShelf (*presence.state, sr, current.presenceFreq, 0.7071f, g (presenceK * current.presenceRangeDb));
+        biquad::lowShelf  (*depth.state,    sr, current.depthFreq,    0.7071f, g (depthK * current.depthRangeDb));
     }
 
     void processBlock (juce::dsp::AudioBlock<float>& block)

@@ -9,6 +9,7 @@
 */
 #pragma once
 #include <juce_dsp/juce_dsp.h>
+#include "BiquadDesign.h"
 #include "Voicings.h"
 
 namespace gramp
@@ -40,9 +41,20 @@ public:
         thump.reset();
     }
 
+    /*  Audio-thread safe voicing / rate change: parameters and coefficients are updated in place
+        (no prepare(), no heap allocation) and the dynamic state is cleared (CR-005). */
     void setVoicing (double sampleRate, const VoicingRow& row)
     {
-        prepare (sampleRate, row);
+        sr = sampleRate;
+        knee = row.powerKnee;
+        asym = row.powerAsym;
+        sagBase = row.sagAmount;
+
+        atk = std::exp (-1.0f / (float) (sampleRate * 0.020));   // 20 ms
+        rel = std::exp (-1.0f / (float) (sampleRate * 0.150));   // 150 ms
+
+        biquad::lowShelf (*thump.state, sampleRate, 110.0f, 0.7071f, 1.0f);
+        reset();
     }
 
     void setSag (float sagKnob) noexcept { sagKnob01 = juce::jlimit (0.0f, 1.0f, sagKnob); }
@@ -87,8 +99,7 @@ public:
         const float gainDb = juce::jlimit (0.0f, 6.0f, depth * env * 8.0f);
         if (std::abs (gainDb - lastThumpDb) > 0.01f)
         {
-            *thump.state = *juce::dsp::IIR::Coefficients<float>::makeLowShelf (
-                sr, 110.0, 0.7071f, juce::Decibels::decibelsToGain (gainDb));
+            biquad::lowShelf (*thump.state, sr, 110.0f, 0.7071f, juce::Decibels::decibelsToGain (gainDb));
             lastThumpDb = gainDb;
         }
         thump.process (juce::dsp::ProcessContextReplacing<float> (block));

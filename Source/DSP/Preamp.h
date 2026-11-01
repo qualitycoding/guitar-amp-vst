@@ -8,6 +8,7 @@
 */
 #pragma once
 #include <juce_dsp/juce_dsp.h>
+#include "BiquadDesign.h"
 #include "Voicings.h"
 
 namespace gramp
@@ -31,6 +32,24 @@ public:
         const juce::dsp::ProcessSpec spec { sampleRate, 128, 2 };
         preEmphasis.prepare (spec);
         postEmphasis.prepare (spec);
+        setDrive (0.5f);
+        outGain = juce::Decibels::decibelsToGain (outG);
+    }
+
+    /*  Audio-thread safe voicing / rate change: coefficients are redesigned in place and the filter
+        memory cleared; no prepare(), no heap allocation (CR-005). prepare() must have run once. */
+    void retune (double sampleRate, const VoicingRow& row, bool secondStage)
+    {
+        const float preF  = secondStage ? row.s2PreFreq  : row.s1PreFreq;
+        const float preG  = secondStage ? row.s2PreGainDb : row.s1PreGainDb;
+        const float outG  = secondStage ? row.s2OutGainDb : row.s1OutGainDb;
+        driveBase         = secondStage ? row.s2Drive     : row.s1Drive;
+        tanhBlend         = row.tanhBlend;
+
+        biquad::highShelf (*preEmphasis.coefficients,  sampleRate, preF, 0.7071f, juce::Decibels::decibelsToGain (preG));
+        biquad::highShelf (*postEmphasis.coefficients, sampleRate, preF, 0.7071f, juce::Decibels::decibelsToGain (-preG));
+        preEmphasis.reset();
+        postEmphasis.reset();
         setDrive (0.5f);
         outGain = juce::Decibels::decibelsToGain (outG);
     }
@@ -94,7 +113,8 @@ public:
 
     void setVoicing (double sampleRate, const VoicingRow& row, float driveKnob)
     {
-        prepare (sampleRate, row);
+        stage1.retune (sampleRate, row, false);
+        stage2.retune (sampleRate, row, true);
         setDrive (driveKnob);
     }
 

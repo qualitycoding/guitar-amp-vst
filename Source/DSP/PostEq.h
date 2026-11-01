@@ -6,6 +6,7 @@
 #pragma once
 
 #include <juce_dsp/juce_dsp.h>
+#include "BiquadDesign.h"
 
 namespace gramp
 {
@@ -18,6 +19,9 @@ public:
         highShelf.prepare (spec);
         sampleRate = spec.sampleRate;
         haveGains = false;
+        // size the coefficient objects now (neutral shelves) so processBlock can design in place
+        biquad::lowShelf  (*lowShelf.state,  sampleRate, 120.0f,  0.7071f, 1.0f);
+        biquad::highShelf (*highShelf.state, sampleRate, 4500.0f, 0.7071f, 1.0f);
     }
 
     void reset()
@@ -28,13 +32,11 @@ public:
 
     void processBlock (juce::dsp::AudioBlock<float>& block, float lowShelfDb, float highShelfDb)
     {
-        // CR-005: coefficients are rebuilt (heap allocation) only when a gain actually changed
+        // CR-005: coefficients are redesigned (in place) only when a gain actually changed
         if (! haveGains || lowShelfDb != lastLowDb || highShelfDb != lastHighDb)
         {
-            *lowShelf.state  = *juce::dsp::IIR::Coefficients<float>::makeLowShelf (
-                sampleRate, 120.0, 0.7071f, juce::Decibels::decibelsToGain (lowShelfDb));
-            *highShelf.state = *juce::dsp::IIR::Coefficients<float>::makeHighShelf (
-                sampleRate, 4500.0, 0.7071f, juce::Decibels::decibelsToGain (highShelfDb));
+            biquad::lowShelf  (*lowShelf.state,  sampleRate, 120.0f,  0.7071f, juce::Decibels::decibelsToGain (lowShelfDb));
+            biquad::highShelf (*highShelf.state, sampleRate, 4500.0f, 0.7071f, juce::Decibels::decibelsToGain (highShelfDb));
             lastLowDb = lowShelfDb;
             lastHighDb = highShelfDb;
             haveGains = true;

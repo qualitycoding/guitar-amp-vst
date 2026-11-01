@@ -15,6 +15,10 @@
 #include <juce_audio_formats/juce_audio_formats.h>
 
 #include "TestSupport.h"
+#include <cstdlib>
+#include <new>
+
+#include "DSP/BiquadDesign.h"
 #include "DSP/Boost.h"
 #include "DSP/CabIR.h"
 #include "DSP/UserIRLoader.h"
@@ -22,7 +26,30 @@
 #include "DSP/PostEq.h"
 #include "DSP/PowerAmp.h"
 #include "DSP/ToneStack.h"
+#include "DSP/Preamp.h"
 #include "DSP/Voicings.h"
+
+
+// ---- allocation probe (CR-005): counts heap allocations and frees made by the calling thread ----
+namespace alloc_probe
+{
+thread_local bool tracking = false;
+thread_local long count = 0;
+}
+
+void* operator new (std::size_t n)
+{
+    if (alloc_probe::tracking)
+        ++alloc_probe::count;
+    if (void* p = std::malloc (n != 0 ? n : 1))
+        return p;
+    throw std::bad_alloc();
+}
+void* operator new[] (std::size_t n) { return operator new (n); }
+void operator delete (void* p) noexcept { if (alloc_probe::tracking && p != nullptr) ++alloc_probe::count; std::free (p); }
+void operator delete[] (void* p) noexcept { operator delete (p); }
+void operator delete (void* p, std::size_t) noexcept { operator delete (p); }
+void operator delete[] (void* p, std::size_t) noexcept { operator delete (p); }
 
 namespace
 {
@@ -1091,6 +1118,196 @@ struct PostEqMutationTest : juce::UnitTest
     }
 };
 
+struct BiquadDesignTest : juce::UnitTest
+{
+    BiquadDesignTest() : juce::UnitTest ("biquad_design") {}
+
+    static float maxDiff (const Coeffs& a, const Coeffs& b)
+    {
+        float d = 1.0e9f;
+        if (a.coefficients.size() == b.coefficients.size())
+        {
+            d = 0.0f;
+            for (int i = 0; i < a.coefficients.size(); ++i)
+                d = juce::jmax (d, std::abs (a.coefficients[i] - b.coefficients[i]) / (1.0f + std::abs (b.coefficients[i])));
+        }
+        return d;
+    }
+
+    void runTest() override
+    {
+        beginTest ("in-place designs agree with JUCE's make* functions (first call and in-place updates)");
+
+        for (const double rate : { 44100.0, 48000.0, 192000.0 })
+            for (const float freq : { 60.0f, 110.0f, 800.0f, 4500.0f, 5600.0f })
+                for (const float gain : { 0.35f, 1.0f, 2.8f })
+                {
+                    Coeffs low, high, pk;           // default objects: first call takes the allocating path
+                    for (int pass = 0; pass < 2; ++pass)     // second pass writes in place
+                    {
+                        gramp::biquad::lowShelf (low, rate, freq, 0.7071f, gain);
+                        gramp::biquad::highShelf (high, rate, freq, 0.7071f, gain);
+                        gramp::biquad::peak (pk, rate, freq, 0.9f, gain);
+                        expectLessThan (maxDiff (low, *Coeffs::makeLowShelf (rate, freq, 0.7071f, gain)), 2.0e-5f);
+                        expectLessThan (maxDiff (high, *Coeffs::makeHighShelf (rate, freq, 0.7071f, gain)), 2.0e-5f);
+                        expectLessThan (maxDiff (pk, *Coeffs::makePeakFilter (rate, freq, 0.9f, gain)), 2.0e-5f);
+                    }
+                }
+    }
+};
+
+struct RetuneEquivalenceTest : juce::UnitTest
+{
+    RetuneEquivalenceTest() : juce::UnitTest ("retune_equivalence") {}
+
+    void runTest() override
+    {
+        beginTest ("allocation-free voicing/rate changes equal a fresh prepare (CR-005)");
+
+        const auto in = sine (512, 150.0, 0.35f);
+        for (int from = 0; from < gramp::numVoicings; from += 3)
+            for (int to = 0; to < gramp::numVoicings; to += 2)
+                for (const double rate : { 48000.0, 192000.0 })
+                {
+                    const auto& rowFrom = gramp::voicings[from];
+                    const auto& rowTo = gramp::voicings[to];
+
+                    // preamp
+                    {
+                        gramp::Preamp a, b;
+                        a.prepare (48000.0, rowFrom);
+                        a.setVoicing (rate, rowTo, 0.5f);
+                        b.prepare (rate, rowTo);
+                        b.setDrive (0.5f);
+                        auto x = in, y = in;
+                        a.process (x.data(), (int) x.size());
+                        b.process (y.data(), (int) y.size());
+                        float e = 0.0f;
+                        for (size_t i = 0; i < x.size(); ++i)
+                            e = juce::jmax (e, std::abs (x[i] - y[i]));
+                        expectLessThan (e, 1.0e-4f, "preamp retune");
+                    }
+
+                    // power amp (saturator + sag + thump)
+                    {
+                        gramp::PowerAmp a, b;
+                        a.prepare (48000.0, rowFrom);
+                        a.setVoicing (rate, rowTo);
+                        b.prepare (rate, rowTo);
+                        a.setSag (0.8f);
+                        b.setSag (0.8f);
+                        auto x = in, y = in;
+                        a.process (x.data(), (int) x.size());
+                        b.process (y.data(), (int) y.size());
+                        float e = 0.0f;
+                        for (size_t i = 0; i < x.size(); ++i)
+                            e = juce::jmax (e, std::abs (x[i] - y[i]));
+                        expectLessThan (e, 1.0e-4f, "power amp retune");
+                        expectWithinAbsoluteError (a.getEnvelope(), b.getEnvelope(), 1.0e-5f);
+
+                        juce::AudioBuffer<float> ba (2, 128), bb (2, 128);
+                        for (int ch = 0; ch < 2; ++ch)
+                            for (int i = 0; i < 128; ++i)
+                            {
+                                ba.setSample (ch, i, in[(size_t) i]);
+                                bb.setSample (ch, i, in[(size_t) i]);
+                            }
+                        juce::dsp::AudioBlock<float> xa (ba), xb (bb);
+                        a.processThump (xa, 0.8f);
+                        b.processThump (xb, 0.8f);
+                        float et = 0.0f;
+                        for (int i = 0; i < 128; ++i)
+                            et = juce::jmax (et, std::abs (ba.getSample (0, i) - bb.getSample (0, i)));
+                        expectLessThan (et, 1.0e-4f, "thump retune");
+                    }
+
+                    // tone stack
+                    {
+                        gramp::ToneStack a, b;
+                        a.prepare (48000.0, rowFrom);
+                        a.setVoicing (rate, rowTo);
+                        b.prepare (rate, rowTo);
+                        a.setBandGains (0.2f, 0.8f, 0.6f, 0.4f, 0.7f);
+                        b.setBandGains (0.2f, 0.8f, 0.6f, 0.4f, 0.7f);
+                        juce::AudioBuffer<float> ba (2, 128), bb (2, 128);
+                        for (int ch = 0; ch < 2; ++ch)
+                            for (int i = 0; i < 128; ++i)
+                            {
+                                ba.setSample (ch, i, in[(size_t) i]);
+                                bb.setSample (ch, i, in[(size_t) i]);
+                            }
+                        juce::dsp::AudioBlock<float> xa (ba), xb (bb);
+                        a.processBlock (xa);
+                        b.processBlock (xb);
+                        float e = 0.0f;
+                        for (int i = 0; i < 128; ++i)
+                            e = juce::jmax (e, std::abs (ba.getSample (1, i) - bb.getSample (1, i)));
+                        expectLessThan (e, 1.0e-4f, "tone stack retune");
+                    }
+                }
+    }
+};
+
+struct NoAudioThreadAllocationTest : juce::UnitTest
+{
+    NoAudioThreadAllocationTest() : juce::UnitTest ("no_audio_alloc") {}
+
+    void runTest() override
+    {
+        beginTest ("processBlock does not allocate or free while knobs move and the amp is re-voiced (CR-005)");
+
+        GrimAmpAudioProcessor proc;
+        setParam (proc, gramp::param::irMix, 0.0f);          // cabinet IR switching is checked separately
+        setParam (proc, gramp::param::postEqOn, 1.0f);
+        setParam (proc, gramp::param::boostOn, 1.0f);
+        proc.prepareToPlay (kRate, 256);
+
+        juce::MidiBuffer midi;
+        juce::AudioBuffer<float> b (2, 256);
+        const auto fill = [&] (int blk)
+        {
+            for (int i = 0; i < 256; ++i)
+            {
+                const float v = 0.25f * (float) std::sin (2.0 * juce::MathConstants<double>::pi * 220.0 * (blk * 256 + i) / kRate);
+                b.setSample (0, i, v);
+                b.setSample (1, i, 0.8f * v);
+            }
+        };
+
+        for (int w = 0; w < 24; ++w)
+        {
+            fill (w);
+            proc.processBlock (b, midi);
+        }
+
+        long allocations = 0;
+        for (int blk = 0; blk < 120; ++blk)
+        {
+            // parameter changes happen on the "message thread" (outside the probe)
+            const float t = (float) blk / 120.0f;
+            setParam (proc, gramp::param::bass, t);
+            setParam (proc, gramp::param::mid, 1.0f - t);
+            setParam (proc, gramp::param::treble, 0.5f + 0.4f * std::sin (6.0f * t));
+            setParam (proc, gramp::param::presence, t);
+            setParam (proc, gramp::param::depth, 1.0f - t);
+            setParam (proc, gramp::param::postEqLow, -6.0f + 12.0f * t);
+            setParam (proc, gramp::param::postEqHigh, 6.0f - 12.0f * t);
+            if (blk % 15 == 7)
+                setParam (proc, gramp::param::ampVoicing, (float) ((blk / 15) % gramp::numVoicings));
+            if (blk % 20 == 3)
+                setParam (proc, gramp::param::oversampling, (float) ((blk / 20) % 2));
+
+            fill (24 + blk);
+            alloc_probe::count = 0;
+            alloc_probe::tracking = true;
+            proc.processBlock (b, midi);
+            alloc_probe::tracking = false;
+            allocations += alloc_probe::count;
+        }
+        expectEquals (allocations, 0L);
+    }
+};
+
 BoostMutationTest tm1;
 NoiseGateMutationTest tm2;
 ToneStackMutationTest tm3;
@@ -1103,4 +1320,7 @@ OversizeBlockTest tm9;
 NanPresetTest tm10;
 ChannelIndependenceTest tm11;
 PostEqMutationTest tm12;
+BiquadDesignTest tm13;
+RetuneEquivalenceTest tm14;
+NoAudioThreadAllocationTest tm15;
 } // namespace
