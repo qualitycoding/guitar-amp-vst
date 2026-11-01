@@ -1,27 +1,16 @@
-# TRACEABILITY — Requirement → Evidence → Step
+{"sha":"9faf764f10ef2f38115aadbbe9f6d83a138a5fb6","node_id":"B_kwDOVYex99oAKDlmYWY3NjRmMTBlZjJmMzgxMTVhYWRiYmU5ZjZkODNhMTM4YTVmYjY","size":2631,"url":"https://api.github.com/repos/qualitycoding/guitar-amp-vst/git/blobs/9faf764f10ef2f38115aadbbe9f6d83a138a5fb6","content":"IyBUUkFDRUFCSUxJVFkg4oCUIFJlcXVpcmVtZW50IOKGkiBFdmlkZW5jZSDi\nhpIgU3RlcAoKIyMgU3VjY2VzcyBjcml0ZXJpYSAoZnJvbSBpbnRha2UpIOKG\nkiB0ZXN0cyDihpIgcHJvZHVjaW5nIHN0ZXBzCgp8ICMgfCBTdWNjZXNzIGNy\naXRlcmlvbiAobWVhc3VyYWJsZSkgfCBFdmlkZW5jZSB8IFByb2R1Y2luZyBz\ndGVwKHMpIHwKfC0tLXwtLS18LS0tfC0tLXwKfCBTQy0xIHwgUGx1Z2luIGxv\nYWRzIGluIEFibGV0b24gTGl2ZSAxMiAoV2luICsgbWFjKSBhcyBWU1QzIHdp\ndGhvdXQgc2NhbiBmYWlsdXJlIHwgVC0wMjAsIFQtMDMwIHwgUy0wMDIsIFMt\nMDE0LCBTLTAxNSB8CnwgU0MtMiB8IFRvbmVzIHNwYW4gNzBzIGJsdWVzIHJv\nY2sg4oaSIGhpZ2gtZ2FpbiBibGFjayBtZXRhbDogNyB2b2ljaW5ncywgbW9u\nb3RvbmljIGdhaW4gb3JkZXJpbmcsIGxvdWRuZXNzLW1hdGNoZWQgfCBULTAw\nNiwgbG91ZG5lc3Mgc3ByZWFkIOKJpCDCsTEuNSBkQiAoUy0wMDkpLCBHLTAx\nMCBzaWduLW9mZiB8IFMtMDA1LCBTLTAwOSwgUy0wMTUgfAp8IFNDLTMgfCAy\nNCBnZW5yZS1zcGVjaWZpYyBmYWN0b3J5IHByZXNldHMsIGFsbCBsb2FkYWJs\nZSBhbmQgcm91bmQtdHJpcHBhYmxlIHwgVC0wMDggfCBTLTAxMSB8CnwgU0Mt\nNCB8IEV2ZXJ5IHVzZXItZmFjaW5nIGNvbnRyb2wgYXV0b21hdGFibGUgaW4g\nTGl2ZSAoc3RhYmxlIElEcywgc3RlcHBlZCArIGNvbnRpbnVvdXMpIHwgVC0w\nMDIsIFQtMDMxIHwgUy0wMDMsIFMtMDEyLCBTLTAxNSB8CnwgU0MtNSB8IEF1\ndG9tYXRpb24gaXMgY2xpY2stZnJlZSBhbmQgcHJlc2V0IGxvYWRzIHNwYXdu\nIG5vIGF1dG9tYXRpb24gbGFuZXMgfCBULTAxMCwgVC0wMTEsIFQtMDMyIHwg\nUy0wMDTigJNTLTAwOCAoc21vb3RoaW5nKSwgUy0wMTIsIFMtMDE1IHwKfCBT\nQy02IHwgU2Vzc2lvbiBzdGF0ZSByZWNhbGxzIGV4YWN0bHkgaW4gTGl2ZSB8\nIFQtMDA5LCBULTAzMyB8IFMtMDAzLCBTLTAxNSB8CnwgU0MtNyB8IFJvYnVz\ndDogbm8gTmFOL0luZiwgZGVub3JtYWwtc2FmZSwgZnV6ei1zYWZlIHByZXNl\ndC9JUiBoYW5kbGluZyB8IFQtMDA0LCBULTAwNSwgVC0wMDcsIFQtMDEyLCBU\nLTAxMyB8IFMtMDA04oCTUy0wMDgsIFMtMDExIHwKfCBTQy04IHwgUGVyZm9y\nbWFuY2U6IOKJpCAxNSUgY29yZSBwZXIgaW5zdGFuY2UgQCA0OGsvMjU2IEhp\nZ2ggbW9kZTsg4omkIDMgbXMgbGF0ZW5jeSBIaWdoLCAwIEVjbyB8IFQtMDUw\nLCBULTA1MSB8IFMtMDEzIHwKfCBTQy05IHwgVmFsaWRhdGVkIGJ5IHBsdWdp\nbnZhbCBzdHJpY3RuZXNzIDUgKyBTdGVpbmJlcmcgdmFsaWRhdG9yIGluIENJ\nIG9uIGJvdGggT1NlcyB8IFQtMDIwLCBULTAyMSB8IFMtMDAyLCBTLTAxNCB8\nCnwgU0MtMTAgfCBObyBuZXR3b3JrL3RlbGVtZXRyeTsgbG9jYWwgZmlsZSBo\nYW5kbGluZyBvbmx5IHwgVC0wNDAsIFQtMDQxIHwgUy0wMTQgfAp8IFNDLTEx\nIHwgSW5zdGFsbGVycyBpbnN0YWxsL3NjYW4vcnVuL3VuaW5zdGFsbCBjbGVh\nbmx5IG9uIGJvdGggT1NlcyB8IFQtMDYwIHwgUy0wMTYgfAp8IFNDLTEyIHwg\nUmVsZWFzZSBoYXBwZW5zIG9ubHkgd2l0aCBodW1hbiBzaWduLW9mZiB8IEct\nMDAyIHJlY29yZCB8IFMtMDE3IHwKfCBTQy0xMyB8IENvZGUgcGFzc2VzIGEg\ndHJhZGl0aW9uYWwgcmV2aWV3IChhbnRpLXBhdHRlcm5zLCB1bnRlc3RlZCBw\nYXRocywgc2VjdXJpdHksIG91dGRhdGVkIGRlcHMpIHdpdGggemVybyB1bnJl\nc29sdmVkIENyaXRpY2FsL0hpZ2ggfCBgcmV2aWV3cy9DT0RFX1JFVklFVy5t\nZGAgfCBTLVJFVklFVyB8CnwgU0MtMTQgfCBDb2RlIHN1cnZpdmVzIGFuIGFk\ndmVyc2FyaWFsIGJyZWFrLWF0dGVtcHQ7IGV2ZXJ5IGNvbmZpcm1lZCBicmVh\nayBpcyB0ZXN0LWNvdmVyZWQgb3IgYW4gYWNjZXB0ZWQgcmlzayB8IGByZXZp\nZXdzL0FEVkVSU0FSSUFMX1JFVklFVy5tZGAgfCBTLUFEVkVSU0FSSUFMIHwK\nfCBTQy0xNSB8IFRlc3Qgc3VpdGUgbWVldHMgdGhlIG11dGF0aW9uLXNjb3Jl\nIGZsb29yIG9uIERTUC9wcmVzZXQgbW9kdWxlcyB8IFQtMDcwLCBgcmV2aWV3\ncy9NVVRBVElPTi5tZGAgfCBTLU1VVEFURSB8CgojIyBUZXN0IOKGkiByZXF1\naXJlbWVudCByZXZlcnNlIG1hcAoKVC0wMDHihpJTQy0xIMK3IFQtMDAy4oaS\nU0MtNCDCtyBULTAwM+KGklNDLTQgwrcgVC0wMDTihpJTQy03IMK3IFQtMDA1\n4oaSU0MtNyDCtyBULTAwNuKGklNDLTIgwrcgVC0wMDfihpJTQy03IMK3IFQt\nMDA44oaSU0MtMyDCtyBULTAwOeKGklNDLTYgwrcgVC0wMTDihpJTQy01IMK3\nIFQtMDEx4oaSU0MtNSDCtyBULTAxMuKGklNDLTcgwrcgVC0wMTPihpJTQy03\nIMK3IFQtMDIw4oaSU0MtMS9TQy05IMK3IFQtMDIx4oaSU0MtOSDCtyBULTAz\nMOKGklNDLTEgwrcgVC0wMzHihpJTQy00IMK3IFQtMDMy4oaSU0MtNSDCtyBU\nLTAzM+KGklNDLTYgwrcgVC0wMzTihpJTQy0xIMK3IFQtMDQw4oaSU0MtMTAg\nwrcgVC0wNDHihpJTQy0xMCDCtyBULTA1MOKGklNDLTggwrcgVC0wNTHihpJT\nQy04IMK3IFQtMDYw4oaSU0MtMTEgwrcgVC0wNzDihpJTQy0xNQoKRXZlcnkg\nc3VjY2VzcyBjcml0ZXJpb24gaGFzIOKJpSAxIHRlc3Q7IGV2ZXJ5IHRlc3Qg\nbWFwcyB0byDiiaUgMSBjcml0ZXJpb24uIE5vIE4vQS1zZWN0aW9uIGFydGlm\nYWN0cyBhcmUgcmVmZXJlbmNlZC4K\n","encoding":"base64"}
 
-## Success criteria (from intake) → tests → producing steps
+## v3.9 addendum traceability (2026-11-02)
 
-| # | Success criterion (measurable) | Evidence | Producing step(s) |
+| Requirement | Artifact | Step | Verification |
 |---|---|---|---|
-| SC-1 | Plugin loads in Ableton Live 12 (Win + mac) as VST3 without scan failure | T-020, T-030 | S-002, S-014, S-015 |
-| SC-2 | Tones span 70s blues rock → high-gain black metal: 7 voicings, monotonic gain ordering, loudness-matched | T-006, loudness spread ≤ ±1.5 dB (S-009), G-010 sign-off | S-005, S-009, S-015 |
-| SC-3 | 24 genre-specific factory presets, all loadable and round-trippable | T-008 | S-011 |
-| SC-4 | Every user-facing control automatable in Live (stable IDs, stepped + continuous) | T-002, T-031 | S-003, S-012, S-015 |
-| SC-5 | Automation is click-free and preset loads spawn no automation lanes | T-010, T-011, T-032 | S-004–S-008 (smoothing), S-012, S-015 |
-| SC-6 | Session state recalls exactly in Live | T-009, T-033 | S-003, S-015 |
-| SC-7 | Robust: no NaN/Inf, denormal-safe, fuzz-safe preset/IR handling | T-004, T-005, T-007, T-012, T-013 | S-004–S-008, S-011 |
-| SC-8 | Performance: ≤ 15% core per instance @ 48k/256 High mode; ≤ 3 ms latency High, 0 Eco | T-050, T-051 | S-013 |
-| SC-9 | Validated by pluginval strictness 5 + Steinberg validator in CI on both OSes | T-020, T-021 | S-002, S-014 |
-| SC-10 | No network/telemetry; local file handling only | T-040, T-041 | S-014 |
-| SC-11 | Installers install/scan/run/uninstall cleanly on both OSes | T-060 | S-016 |
-| SC-12 | Release happens only with human sign-off | G-002 record | S-017 |
-| SC-13 | Code passes a traditional review (anti-patterns, untested paths, security, outdated deps) with zero unresolved Critical/High | `reviews/CODE_REVIEW.md` | S-REVIEW |
-| SC-14 | Code survives an adversarial break-attempt; every confirmed break is test-covered or an accepted risk | `reviews/ADVERSARIAL_REVIEW.md` | S-ADVERSARIAL |
-| SC-15 | Test suite meets the mutation-score floor on DSP/preset modules | T-070, `reviews/MUTATION.md` | S-MUTATE |
-
-## Test → requirement reverse map
-
-T-001→SC-1 · T-002→SC-4 · T-003→SC-4 · T-004→SC-7 · T-005→SC-7 · T-006→SC-2 · T-007→SC-7 · T-008→SC-3 · T-009→SC-6 · T-010→SC-5 · T-011→SC-5 · T-012→SC-7 · T-013→SC-7 · T-020→SC-1/SC-9 · T-021→SC-9 · T-030→SC-1 · T-031→SC-4 · T-032→SC-5 · T-033→SC-6 · T-034→SC-1 · T-040→SC-10 · T-041→SC-10 · T-050→SC-8 · T-051→SC-8 · T-060→SC-11 · T-070→SC-15
-
-Every success criterion has ≥ 1 test; every test maps to ≥ 1 criterion. No N/A-section artifacts are referenced.
+| Gap ledger per planning root | `plan/ADDENDUM-V3.9-GAP.md` | S-ADD-001 | `v39_addendum_verify.py final` |
+| Planning-only scope freeze | D-900 in `plan/DECISIONS.md` | S-ADD-001 | verifier + retrospective |
+| Mutation three-tier priced CI, aggregator, report score gate | `reviews/MUTATION.md` | S-ADD-080 | verifier + first CI run (pending in CI) |
+| Split lesson/knowledge stores | G-003 in `plan/GATES.md`, `.checkpoints/state.json` | S-ADD-010/S-ADD-060 | verifier |
+| Full-context checkpoints / zero-context resume | `.checkpoints/state.json` | S-ADD-020 | verifier |
+| Assumption audit, reviews | `premortem/ASSUMPTION_AUDIT.md`, `reviews/` | S-ADD-030 | verifier |
+| Honest verification, deviations | `DEVIATIONS.md`, `EXECUTION_LOG.md` | S-ADD-040 | verifier |
+| Ephemeral protections | `plan/ENVIRONMENT.md` | S-ADD-050 | verifier |
+| CI platform matrix | `plan/CI-MATRIX.md` | S-ADD-070 | cold read |
+| Cold read / pre-mortem | this file, `premortem/RISK_REGISTER.md` | S-ADD-090 | verifier |
