@@ -43,3 +43,29 @@ fixed or explicitly accepted before any release step. Status as of this commit:
 Protocol 3.8 says Critical/High breaks block release. Of the High findings, CR-005 (rest)
 and the new T-040 finding remain open, so **G-002 (release) should not be requested** until each is
 fixed or explicitly accepted as a risk by the maintainer. (Updated after the CR-004/005/006 round: the remaining High items are CR-005 (rest) and the T-040 decision.)
+
+## GitHub issues for the open items
+
+| Issue | Finding(s) |
+|---|---|
+| #2, #3 | CR-005: cabinet IR loads on the audio thread; `setLatencySamples` from the audio thread |
+| #4 | CR-009 gate window |
+| #5 | CR-010 / AR-004 smoothing staircase |
+| #6 | CR-011 / AR-002 crossfade |
+| #7 | AR-003 mono High mode |
+| #8 | CR-012 / AR-010 reset and tail |
+| #9 | AR-005 sample-rate stability |
+| #10 | CR-014 parser limits |
+| #11 | CR-015 loader formats |
+| #12 | CR-016 / AR-006 user IR slot |
+| #13 | CR-017 / CR-020 CI hardening, outdated actions |
+| #14 | CR-018 freeze manifest |
+| #15 | CR-019 coverage gaps |
+| #16 | AR-007 T-011(b) |
+| #17 | AR-009 macOS preset directory |
+| #18 | CR-021..CR-028 low-severity backlog |
+| #19 | T-040 Windows import gate |
+| #20 | Unconfirmed hypotheses H-1..H-8 |
+| #21 | Loudness re-calibration |
+| #22 | T-050 Windows margin |
+| #23 | Mutation job runtime and score margin |
