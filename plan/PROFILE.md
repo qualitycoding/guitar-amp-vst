@@ -1,37 +1,5 @@
-# PROFILE — Active Profiles & Applicability
+{"sha":"bd3bad71180d79e36986d8ef1d33c64d9b6e7e49","node_id":"B_kwDOVYex99oAKGJkM2JhZDcxMTgwZDc5ZTM2OTg2ZDhlZjFkMzNjNjRkOWI2ZTdlNDk","size":1922,"url":"https://api.github.com/repos/qualitycoding/guitar-amp-vst/git/blobs/bd3bad71180d79e36986d8ef1d33c64d9b6e7e49","content":"IyBQUk9GSUxFIOKAlCBBY3RpdmUgUHJvZmlsZXMgJiBBcHBsaWNhYmlsaXR5\nCgojIyBBY3RpdmUgcHJvZmlsZXMKCnwgUHJvZmlsZSB8IEFjdGl2ZSB8IEp1\nc3RpZmljYXRpb24gfAp8LS0tfC0tLXwtLS18CnwgYHNvZnR3YXJlYCB8ICoq\neWVzKiogfCBQcm9kdWNpbmcgYSBzaGlwcGFibGUsIG1haW50YWluZWQgQysr\nIGF1ZGlvIHBsdWdpbi4gfAp8IGBtYXRoYCB8IG5vIHwgTm8gbWF0aGVtYXRp\nY2FsIHN0YXRlbWVudHMgb3IgcHJvb2ZzIGFyZSBkZWxpdmVyYWJsZXMuIERT\nUCB0cmFuc2ZlciBmdW5jdGlvbnMgYXJlIGVuZ2luZWVyaW5nIHBhcmFtZXRl\ncnMsIG5vdCB0aGVvcmVtcy4gfAp8IGBjb21wdXRhdGlvbmFsYCB8IG5vIHwg\nQ29ycmVjdG5lc3MgaXMgdmFsaWRhdGVkIGJ5IHRlc3RzL2xpc3RlbmluZywg\nbm90IGJ5IG51bWVyaWNhbCByZXN1bHRzIHdob3NlIGNvcnJlY3RuZXNzIGRl\ncGVuZHMgb24gY29tcHV0YXRpb24uIChJbXBsaWVzIGBzb2Z0d2FyZWAgb25s\neSB3aGVuIGFjdGl2ZS4pIHwKfCBgcHVibGljYXRpb25gIHwgbm8gfCBObyBt\nYW51c2NyaXB0LCBwcmVwcmludCwgb3IgYXJjaGl2ZWQgc2Nob2xhcmx5IHJl\nY29yZC4gfAoKIyMgTW9kZSBmbGFncwoKfCBGbGFnIHwgVmFsdWUgfCBKdXN0\naWZpY2F0aW9uIHwKfC0tLXwtLS18LS0tfAp8IGBtYXRoLmV4cGxvcmF0aW9u\nYCB8IGZhbHNlIHwgTi9BIChtYXRoIHByb2ZpbGUgaW5hY3RpdmUpLiB8Cnwg\nYHNvZnR3YXJlLmRlcGxveXNgIHwgKip0cnVlKiogfCBUaGUgcGxhbiBpbmNs\ndWRlcyBwYWNrYWdpbmcgaW5zdGFsbGVycyBhbmQgYSBwdWJsaWMgcmVsZWFz\nZSBvZiBhIGRpc3RyaWJ1dGVkIGFydGlmYWN0IChpbnN0YWxsZXJzL2JpbmFy\naWVzKSDihpIgZ2F0ZSBgRy0wMDJgIGFuZCBgcGxhbi9PUEVSQVRJT05TLm1k\nYCBhcmUgcmVxdWlyZWQuIHwKCiMjIE4vQSBzZWN0aW9ucyAocHJvZHVjZSBu\nbyBhcnRpZmFjdHMsIGltcG9zZSBubyBjaGVja3MpCgotIDAuMy4zIE1hdGhl\nbWF0aWNhbCBpbnRha2U7IDAuMy40IENvbXB1dGF0aW9uYWwgaW50YWtlOyAw\nLjMuNSBQdWJsaWNhdGlvbiBpbnRha2UKLSAyQSAoYWxsIG1hdGggcmVzZWFy\nY2gvc3BlY2lmaWNhdGlvbiBzdWItcGhhc2VzLCBpbmNsLiAyQS4wIEV4cGxv\ncmF0aW9uKSwgMkMgRmlndXJlIFNwZWNpZmljYXRpb25zLCAyRCBNYW51c2Ny\naXB0IFNwZWNpZmljYXRpb24KLSBgcmVzZWFyY2gvTk9WRUxUWS5tZGAsIGBt\nYXRoL2AgKGFsbCksIGBmaWd1cmVzL2AsIGBtYW51c2NyaXB0L2AKLSBSdWxl\nIDcgZXZpZGVuY2UgY2xhc3NlczsgUnVsZSA4IHJlc3VsdC1hZ25vc3RpYyBw\nbGFubmluZyAobWF0aC9jb21wdXRhdGlvbmFsIHBvcnRpb25zKQotIEdhdGUg\nYEctMDAxYCAobWF0aC9jb21wdXRhdGlvbmFsIGhlYWRsaW5lIHJlc3VsdCkg\n4oCUICoqbm90IHJlcXVpcmVkKioKLSBQaGFzZSA0IGxlbnNlczogbWF0aCBj\nb3JyZWN0bmVzcywgY29tcHV0YXRpb25hbCBudW1lcmljcy9yZXByb2R1Y2li\naWxpdHksIG5vdmVsdHkvcHJpb3ItYXJ0LCByZWZlcmVlL3ZlbnVlIGxlbnNl\ncwotIFBoYXNlIDUgY29uc2lzdGVuY3kgY2hlY2tzIGZvciBgTS0jIyNgLCBg\nRi0jIyNgLCBtYW51c2NyaXB0IGNsYWltcwoKIyMgUmVxdWlyZWQgZ2F0ZXMg\nZm9yIHRoaXMgcHJvZmlsZSBzZXQgKFJ1bGUgMTApCgotIGBHLTAwMmAg4oCU\nIHJlcXVpcmVkIChwdWJsaWMgcmVsZWFzZSBvZiBpbnN0YWxsZXJzL2JpbmFy\naWVzKS4KLSBgRy0wMDNgIOKAlCByZXF1aXJlZCAoYWx3YXlzKS4KLSBgRy0w\nMTBgIOKAlCBhZGRlZCBhcyByaXNrIG1pdGlnYXRpb24gKFBoYXNlIDQuNCk6\nIGh1bWFuIHRvbmUgc2lnbi1vZmYuCgojIyBQcm9maWxlIGNoYW5nZXMKCk5v\nbmUuIFJlY29yZGVkIGluIGAuY2hlY2twb2ludHMvc3RhdGUuanNvbmAgdW5k\nZXIgYHByb2ZpbGVzYCBhbmQgYG1vZGVfZmxhZ3NgLgo=\n","encoding":"base64"}
 
-## Active profiles
+## v3.9 addendum profile confirmation
 
-| Profile | Active | Justification |
-|---|---|---|
-| `software` | **yes** | Producing a shippable, maintained C++ audio plugin. |
-| `math` | no | No mathematical statements or proofs are deliverables. DSP transfer functions are engineering parameters, not theorems. |
-| `computational` | no | Correctness is validated by tests/listening, not by numerical results whose correctness depends on computation. (Implies `software` only when active.) |
-| `publication` | no | No manuscript, preprint, or archived scholarly record. |
-
-## Mode flags
-
-| Flag | Value | Justification |
-|---|---|---|
-| `math.exploration` | false | N/A (math profile inactive). |
-| `software.deploys` | **true** | The plan includes packaging installers and a public release of a distributed artifact (installers/binaries) → gate `G-002` and `plan/OPERATIONS.md` are required. |
-
-## N/A sections (produce no artifacts, impose no checks)
-
-- 0.3.3 Mathematical intake; 0.3.4 Computational intake; 0.3.5 Publication intake
-- 2A (all math research/specification sub-phases, incl. 2A.0 Exploration), 2C Figure Specifications, 2D Manuscript Specification
-- `research/NOVELTY.md`, `math/` (all), `figures/`, `manuscript/`
-- Rule 7 evidence classes; Rule 8 result-agnostic planning (math/computational portions)
-- Gate `G-001` (math/computational headline result) — **not required**
-- Phase 4 lenses: math correctness, computational numerics/reproducibility, novelty/prior-art, referee/venue lenses
-- Phase 5 consistency checks for `M-###`, `F-###`, manuscript claims
-
-## Required gates for this profile set (Rule 10)
-
-- `G-002` — required (public release of installers/binaries).
-- `G-003` — required (always).
-- `G-010` — added as risk mitigation (Phase 4.4): human tone sign-off.
-
-## Profile changes
-
-None. Recorded in `.checkpoints/state.json` under `profiles` and `mode_flags`.
+Active profiles unchanged; `software` active; `software.deploys` unchanged. Target protocol v3.9.
