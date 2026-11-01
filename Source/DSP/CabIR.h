@@ -11,6 +11,7 @@
   keeps Eco-mode plugin latency at exactly 0 samples (T-051).
 */
 #pragma once
+#include <atomic>
 #include <cstring>
 #include <juce_dsp/juce_dsp.h>
 #include "UserIRLoader.h"
@@ -18,16 +19,31 @@
 
 namespace gramp
 {
-class CabIR
+/*  Convolution IR loads (decoding a factory WAV, copying a user IR) never run on the audio thread
+    (CR-005): applyPending() only posts a command, and this class's worker thread performs the
+    loadImpulseResponse calls, which JUCE documents as thread-safe. */
+class CabIR : private juce::Thread
 {
 public:
+    CabIR() : juce::Thread ("GrimAmp cab IR loader") { startThread(); }
+
+    ~CabIR() override
+    {
+        signalThreadShouldExit();
+        notify();
+        stopThread (5000);
+    }
+
     void prepare (const juce::dsp::ProcessSpec& spec)
     {
         closeScratch.setSize ((int) spec.numChannels, (int) spec.maximumBlockSize);
         offScratch.setSize ((int) spec.numChannels, (int) spec.maximumBlockSize);
 
-        closeConv.prepare (spec);
-        offConv.prepare (spec);
+        {
+            const juce::ScopedLock sl (loadLock);   // not while the worker is inside a load
+            closeConv.prepare (spec);
+            offConv.prepare (spec);
+        }
         prepared = true;
 
         // force a reload of whatever cab is selected so the new rate takes effect
@@ -62,8 +78,8 @@ public:
         }
     }
 
-    /*  Called from the audio thread at block boundary: applies any pending
-        factory/user IR swap (loadImpulseResponse is wait-free, see JUCE docs). */
+    /*  Called from the audio thread at block boundary: posts any pending factory/user IR swap to the
+        worker. No decoding, copying or allocation happens here. */
     void applyPending()
     {
         if (! prepared)
@@ -71,16 +87,7 @@ public:
 
         if (hasPendingUser)
         {
-            // each engine takes ownership of its own copy
-            juce::AudioBuffer<float> first (userIrBuffer), second (userIrBuffer);
-            closeConv.loadImpulseResponse (std::move (first),  userIrRate,
-                                           juce::dsp::Convolution::Stereo::no,
-                                           juce::dsp::Convolution::Trim::no,
-                                           juce::dsp::Convolution::Normalise::no);
-            offConv.loadImpulseResponse (std::move (second), userIrRate,
-                                         juce::dsp::Convolution::Stereo::no,
-                                         juce::dsp::Convolution::Trim::no,
-                                         juce::dsp::Convolution::Normalise::no);
+            post (kUserCommand);
             currentFactory = -1;
             hasPendingUser = false;
             pendingFactory = -1;   // cancel any stale factory fallback (e.g. selected
@@ -92,38 +99,27 @@ public:
 
         if (pendingFactory >= 0 && pendingFactory != currentFactory)
         {
-            for (int engine = 0; engine < 2; ++engine)
-            {
-                const auto name = cab::getBinaryDataName (pendingFactory, engine == 1);
-                const void* data = nullptr;
-                int size = 0;
-
-                getNamedBinaryData (name, data, size);
-
-                if (data != nullptr && size > 0)
-                {
-                    auto& conv = (engine == 0 ? closeConv : offConv);
-                    // Trim::yes strips the IR's leading dead air so the cab adds
-                    // no unreported onset delay (T-051: measured impulse delay
-                    // must match getLatencySamples() within ±1 sample in Eco).
-                    conv.loadImpulseResponse (data, (size_t) size,
-                                              juce::dsp::Convolution::Stereo::no,
-                                              juce::dsp::Convolution::Trim::yes,
-                                              0,
-                                              juce::dsp::Convolution::Normalise::no);
-                }
-            }
+            post (kFactoryBase + pendingFactory);
             currentFactory = pendingFactory;
         }
     }
 
-    /*  Audio-thread handoff from the loader thread (takes ownership). */
-    void setUserImpulseResponse (juce::AudioBuffer<float>&& buffer, double rate)
+    /*  True when a new user IR can be handed over (the previous one has been taken by the worker). */
+    bool canAcceptUserIr() const noexcept { return ! stagingFull.load(); }
+
+    /*  Audio-thread handoff from the loader thread. The buffer is moved into an empty staging slot, so
+        nothing is allocated or freed here; call only when canAcceptUserIr() is true. */
+    bool setUserImpulseResponse (juce::AudioBuffer<float>&& buffer, double rate)
     {
-        userIrBuffer = std::move (buffer);
+        if (stagingFull.load())
+            return false;
+
+        userStaging = std::move (buffer);
+        stagingRate = rate;
         lastUserValid = true;
-        userIrRate = rate;
         hasPendingUser = true;      // becomes audible as soon as the audio thread applies it
+        stagingFull.store (true);
+        return true;
     }
 
     bool hasUserIr() const noexcept         { return lastUserValid; }
@@ -136,7 +132,8 @@ public:
         loop before measuring (T-050/T-051). */
     bool isEngineReady() const noexcept
     {
-        return closeConv.getCurrentIRSize() > 0 && offConv.getCurrentIRSize() > 0;
+        return outstanding.load() == 0
+               && closeConv.getCurrentIRSize() > 0 && offConv.getCurrentIRSize() > 0;
     }
 
     int getEngineIrSize() const noexcept   // 0 while the background engine holds nothing
@@ -195,6 +192,89 @@ public:
     }
 
 private:
+    static constexpr int kNoCommand = 0, kUserCommand = 1, kFactoryBase = 100;
+
+    /*  Latest command wins; `outstanding` is non-zero from posting until the worker finished it. */
+    void post (int command) noexcept
+    {
+        if (command_.exchange (command) == kNoCommand)
+            outstanding.fetch_add (1);
+        notify();
+    }
+
+    void run() override
+    {
+        while (! threadShouldExit())
+        {
+            wait (50);
+            if (threadShouldExit())
+                break;
+
+            const int command = command_.exchange (kNoCommand);
+
+            if (stagingFull.load())           // after the command read: staging is published before its command
+            {
+                userIr = std::move (userStaging);
+                userIrRate = stagingRate;
+                stagingFull.store (false);
+            }
+
+            if (command == kNoCommand)
+                continue;
+
+            {
+                const juce::ScopedLock sl (loadLock);
+                if (command == kUserCommand)
+                    loadUser();
+                else
+                    loadFactory (command - kFactoryBase);
+            }
+            outstanding.fetch_sub (1);
+        }
+    }
+
+    void loadUser()
+    {
+        if (userIr.getNumSamples() == 0)
+            return;
+
+        // each engine takes ownership of its own copy
+        juce::AudioBuffer<float> first (userIr), second (userIr);
+        closeConv.loadImpulseResponse (std::move (first),  userIrRate,
+                                       juce::dsp::Convolution::Stereo::no,
+                                       juce::dsp::Convolution::Trim::no,
+                                       juce::dsp::Convolution::Normalise::no);
+        offConv.loadImpulseResponse (std::move (second), userIrRate,
+                                     juce::dsp::Convolution::Stereo::no,
+                                     juce::dsp::Convolution::Trim::no,
+                                     juce::dsp::Convolution::Normalise::no);
+    }
+
+    void loadFactory (int cabIndex)
+    {
+        for (int engine = 0; engine < 2; ++engine)
+        {
+            const auto name = cab::getBinaryDataName (cabIndex, engine == 1);
+            const void* data = nullptr;
+            int size = 0;
+
+            getNamedBinaryData (name, data, size);
+
+            if (data != nullptr && size > 0)
+            {
+                auto& conv = (engine == 0 ? closeConv : offConv);
+                // Trim::yes strips the IR's leading dead air so the cab adds
+                // no unreported onset delay (T-051: measured impulse delay
+                // must match getLatencySamples() within +-1 sample in Eco).
+                conv.loadImpulseResponse (data, (size_t) size,
+                                          juce::dsp::Convolution::Stereo::no,
+                                          juce::dsp::Convolution::Trim::yes,
+                                          0,
+                                          juce::dsp::Convolution::Normalise::no);
+            }
+        }
+    }
+
     static void copyBlock (const juce::dsp::AudioBlock<float>& src,
                            juce::dsp::AudioBlock<float>& dst)
     {
@@ -225,9 +305,17 @@ private:
 
     juce::dsp::Convolution closeConv, offConv;
 
-    juce::AudioBuffer<float> userIrBuffer;
+    // audio thread -> worker hand-off (see post / run)
+    std::atomic<int> command_ { kNoCommand };
+    std::atomic<int> outstanding { 0 };
+    std::atomic<bool> stagingFull { false };
+    juce::AudioBuffer<float> userStaging;      // written by the audio thread while !stagingFull
+    double stagingRate = 44100.0;
+    juce::AudioBuffer<float> userIr;           // owned by the worker; retained for re-selection
     double userIrRate = 44100.0;
-    bool hasPendingUser = false, lastUserValid = false;
+    juce::CriticalSection loadLock;            // worker loads vs prepare(); never taken on the audio thread
+    bool hasPendingUser = false;
+    std::atomic<bool> lastUserValid { false };
 
     int pendingFactory = 0, currentFactory = -2;   // -2: nothing loaded yet
     bool prepared = false;
