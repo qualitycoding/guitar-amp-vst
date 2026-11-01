@@ -1,0 +1,81 @@
+name: release
+
+# Builds all artifacts on v* tags and creates a DRAFT release.
+# Publishing happens only after human gate G-002 sign-off.
+
+on:
+  push:
+    tags: [ 'v*' ]
+
+jobs:
+  artifacts:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ windows-latest, macos-latest ]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Configure + build all formats
+        run: |
+          cmake -B build -DCMAKE_BUILD_TYPE=Release
+          cmake --build build --config Release
+
+      - name: ctest
+        run: ctest --test-dir build --output-on-failure -C Release
+
+      - name: Package (Windows)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          out="GrimAmp-v${GITHUB_REF_NAME#v}-windows-x64"
+          mkdir -p "$out"
+          cp -r "build/GrimAmp_artefacts/Release/VST3/GrimAmp.vst3" "$out/"
+          cp README.md LICENSE CHANGELOG.md "$out/"
+          powershell -Command "Compress-Archive -Path '$out' -DestinationPath '$out.zip'"
+
+      - name: Package (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          ver="${GITHUB_REF_NAME#v}"
+          out="GrimAmp-v$ver-macos"
+          mkdir -p "$out"
+          cp -r "build/GrimAmp_artefacts/Release/VST3/GrimAmp.vst3" "$out/"
+          cp -r "build/GrimAmp_artefacts/Release/AU/GrimAmp.component" "$out/"
+          cp -r "build/GrimAmp_artefacts/Release/Standalone/GrimAmp.app" "$out/"
+          cp README.md LICENSE CHANGELOG.md "$out/"
+          hdiutil create -volname "GrimAmp v$ver" -srcfolder "$out" -ov -format UDZO "$out.dmg"
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-${{ matrix.os }}
+          path: |
+            GrimAmp-*.zip
+            GrimAmp-*.dmg
+
+  draft-release:
+    needs: artifacts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Checksums
+        run: |
+          cd dist && sha256sum * > ../SHA256SUMS.txt && cd ..
+          mv SHA256SUMS.txt dist/
+
+      - name: Create DRAFT release
+        uses: softprops/action-gh-release@v2
+        with:
+          draft: true
+          files: dist/*
+          generate_release_notes: true

@@ -3,6 +3,7 @@
 **Run ID:** `run-20261027T120000Z-guitar-amp-vst`
 **Generation branch:** `gen-20261027T120000Z-guitar-amp-vst`
 **Target repo:** `github.com/qualitycoding/guitar-amp-vst` (currently private/absent — see `plan/ASSUMPTIONS.md` A-001)
+**Environment tag:** `[ephemeral]` (Rule 0.3, protocol v3.6 — see `plan/PROFILE.md`; probe evidence in `plan/ENVIRONMENT.md` §0.1)
 
 ## Purpose
 
@@ -15,19 +16,20 @@ Build a rock-and-metal guitar amp simulator audio plugin spanning 70s blues rock
 
 ## Reading order
 
-1. `plan/PROFILE.md` — profiles, mode flags, N/A sections
+1. `plan/PROFILE.md` — profiles, mode flags, environment tag, N/A sections
 2. `plan/ASSUMPTIONS.md` — every intake default adopted (A-###)
 3. `plan/DECISIONS.md` — locked design decisions + if→then decision rules (D-###)
-4. `plan/ENVIRONMENT.md` — pinned toolchain, verified setup commands
+4. `plan/ENVIRONMENT.md` — pinned toolchain, verified setup commands, §0.1 environment-class probe, §1.5 ephemeral protections, per-runner-class T-050 targets
 5. `tests/TEST_SPEC.md` — frozen tests (T-###); verify hashes with `tests/FROZEN_MANIFEST.sha256`
 6. `plan/PLAN.md` — the steps, S-000 → S-RETRO → S-KNOW
 7. `plan/GATES.md` — human gates
 8. `plan/OPERATIONS.md` — release runbook and rollback
 9. `premortem/RISK_REGISTER.md` — risks and the mitigations baked into the plan
+10. `reviews/PROTOCOL_CONFORMANCE_v36.md` — plan-vs-protocol v3.6 conformance review and amendment record (D-001o/D-001p)
 
 ## Environment setup
 
-Run `plan/ENVIRONMENT.md` top to bottom. It is literal: clone, CMake configure, build, run the frozen suite. Pinned: JUCE 8.0.12, CMake ≥ 3.25, C++20, pluginval 2.0.0, GitHub Actions `windows-latest` + `macos-latest`.
+Run `plan/ENVIRONMENT.md` top to bottom. It is literal: clone, CMake configure, build, run the frozen suite. Pinned: **JUCE 8.0.16-security** (D-001 superseded the original 8.0.15 pin), CMake ≥ 3.25, C++20, **pluginval v2.0.0-beta3** (D-001i — no stable 2.0.0 exists), GitHub Actions `windows-latest` + `macos-latest`. In an `[ephemeral]` sandbox, run `bash tools/restage-env.sh` first (turn-start restaging; see `plan/ENVIRONMENT.md` §1.5).
 
 ## Running the frozen suite
 
@@ -55,6 +57,12 @@ Default rule (restated from Rule 3.2): choose the most reversible option that do
 ## Integrity rule (Rule 9, restated verbatim)
 
 No step may fabricate, cherry-pick without disclosure, or manually alter data, test results, benchmarks, or figures.
+
+## Global Rule 6 — push cadence (restated per protocol v3.6 §3.5)
+
+Commit and push after every successful chunk of work — on **all** platforms, including ephemeral containers. Verify the push with `git ls-remote` (expected commit vs remote HEAD); on mismatch, report it, retry with backoff, and never assume a push succeeded. Do not let unpushed work accumulate.
+
+**Named fallback for this run (D-001a, D-001o):** the implementation sandbox has no outbound git network (verified: connections time out). The cadence therefore runs through the plan's own fallback ladder (S-KNOW 3.7.2): commits accumulate on the durable mount and ship to the human as a `git bundle`; the human (or a networked agent) pushes and performs the `ls-remote` verification as the postcondition. Remote state is still readable from the sandbox via the web/raw file API, so drift checks against `origin` remain possible read-only.
 
 ## Rules 11, 12, 13 (restated)
 
