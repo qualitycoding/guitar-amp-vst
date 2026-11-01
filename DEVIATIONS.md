@@ -282,3 +282,17 @@ persistent worker with a lock-free hand-off. The sound of stereo material change
 channel is now processed independently as intended) and the S-009 loudness calibration was **not
 re-run**; mono and identical-L/R material should be unaffected apart from the removed block-boundary
 state jumps. Regression test `channel_independence` pins the new behaviour.
+
+## D-001t — CR-005 allocation work: what landed and what was reverted
+
+Landed: `Source/DSP/BiquadDesign.h` (in-place RBJ peak/shelf design that mirrors JUCE's make* functions;
+`biquad_design` compares them), `retune`/in-place `setVoicing` on `Preamp` and `PowerAmp`, in-place
+coefficient updates in `ToneStack`, `PostEq` and the thump shelf, a pre-built oversampler with
+`OversampledStage::setHighQuality`, and an allocation probe (`no_audio_alloc`) that replaces the global
+operator new/delete in the test executable and counts calls made by the processing thread.
+Reverted: a worker thread for `Convolution::loadImpulseResponse` (commit 7b7ea52). Evidence: the new
+`automation_stress` test (random automation of all parameters in 32-sample sub-blocks) failed with
+`std::bad_function_call` at block size 1024 under the sanitizer job with the worker, pluginval's Automation test
+failed once on macOS (96 kHz/1024) and once on Windows (96 kHz/64), and `automation_stress` passed after the
+revert (commit 2ab8a57). Likely cause (unverified): JUCE's convolution message queue assumes one producing
+thread. Consequence: cabinet IR changes still decode/copy on the audio thread.

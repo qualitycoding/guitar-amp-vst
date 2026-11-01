@@ -28,7 +28,12 @@ armed, per D-005/D-006/D-007 and the T-010/T-011 frozen tests.
 
 1. **Atomic reads.** Every parameter value is read via
    `apvts.getRawParameterValue(id)->load()` at block top (`pullSmoothParams` +
-   `applySteppedParams`) — no locks, no allocations on the audio path.
+   `applySteppedParams`). **Corrected 2026-11-01 (CR-005):** the earlier claim "no locks, no allocations
+for the whole audio path" was too strong. Since the CR-005 work the continuous-parameter path (tone stack,
+post-EQ, thump shelf, voicing and Eco/High switching) is allocation-free and tested by the
+`no_audio_alloc` allocation probe. Cabinet IR changes are not: `Convolution::loadImpulseResponse` is still
+called from `applyPending` on the audio thread, which decodes the factory WAV or copies the user IR (see
+finding 5 and `reviews/REVIEW_DISPOSITION.md`).
 2. **Stepped changes are click-guarded.** Voicing/cab/oversampling/post-eq-on
    switch only at block boundaries and trigger a 5 ms equal-power-style linear
    crossfade (`crossfadeSamplesLeft`). T-011 (gesture discipline) passes.
@@ -42,7 +47,7 @@ armed, per D-005/D-006/D-007 and the T-010/T-011 frozen tests.
    `beginChangeGesture`/`endChangeGesture`, so loading a preset while automation
    is armed creates no automation lanes (frozen: T-032 in Live; locally the same
    code path is exercised by T-008 preset round-trip).
-5. **Audio-thread IR swap is wait-free** (per JUCE docs,
+5. **Audio-thread IR swap is NOT allocation-free** (corrected 2026-11-01: it was described as wait-free from the JUCE docs, which was never verified; decode and copy happen on the calling thread; moving the call to a worker thread was tried and reverted because the automation stress test reproduced `std::bad_function_call`, see D-001t). Original text: (per JUCE docs,
    `Convolution::loadImpulseResponse` queues to a background thread); the
    processor hands the loaded buffer off at block boundary
    (`userIrLoader.takeLoadedBuffer`). Note for T-031: the new IR becomes
