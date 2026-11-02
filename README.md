@@ -20,7 +20,7 @@ engine, cabinet impulse responses and factory presets.
 - Every parameter is host-automatable.
 - A frozen test suite (13 unit and DSP test targets, preset fuzzing, loudness and benchmark tools),
   pluginval at strictness 5, and mutation testing with Mull.
-- Licence: AGPL-3.0, using JUCE under its AGPL option.
+- Licence: source Apache-2.0 (`LICENSE` on this branch); binaries linking JUCE fall under AGPL-3.0 or a commercial JUCE licence. The implementation branch carries an AGPL-3.0 `LICENSE` instead, which needs reconciling before a merge.
 
 ## What is not done
 
