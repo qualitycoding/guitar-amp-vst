@@ -7,7 +7,8 @@
   ],
   "mode_flags": {
     "software.deploys": true,
-    "math.exploration": false
+    "math.exploration": false,
+    "audio": true
   },
   "phase": "5",
   "subphase": "final-consistency-check",
@@ -122,7 +123,9 @@
     }
   },
   "tier_substitutions": [],
-  "open_items": [],
+  "open_items": [
+    "listening gate G-010: blocked — see listening/G-010/round-001/result.json"
+  ],
   "knowledge_store": {
     "location": "github.com/qualitycoding/knowledge",
     "commit_read": "09f34582dfb50f876834a42b85ba19efac5a3129",
@@ -139,7 +142,7 @@
     "K-20261027T123100Z-juce8-licensing",
     "K-20261027T123200Z-mull-mutation-testing"
   ],
-  "updated_at": "2026-10-31T00:00:00Z",
+  "updated_at": "2026-11-02T14:15:19Z",
   "execution_environments": [
     {
       "name": "generation/implementation sandbox",
@@ -166,5 +169,20 @@
       "protocol_version": "v3.6",
       "skills_head": "b361dab"
     }
-  ]
+  ],
+  "listening_gate": {
+    "gate_id": "G-010",
+    "test_type": "realism",
+    "round": 1,
+    "status": "blocked",
+    "seed": 20261103,
+    "result_path": "listening/G-010/round-001/result.json",
+    "blockers": [
+      "S-015 Live record/render evidence is incomplete.",
+      "Unresolved review/host prerequisites must finish first.",
+      "Redistribution-compatible real-amp/reference recordings or an explicit demos-only rescope decision are required."
+    ],
+    "next_step": "S-016",
+    "updated_at": "2026-11-02T14:15:19Z"
+  }
 }

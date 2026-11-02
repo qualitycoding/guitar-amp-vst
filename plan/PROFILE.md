@@ -52,3 +52,4 @@ bundle fallback (HANDOFF.md).
 None. Recorded in `.checkpoints/state.json` under `profiles` and `mode_flags`.
 The `[ephemeral]` environment tag (added by D-001o) should also be recorded
 there under a new `environment_class` key on next checkpoint update.
+| `audio` | **true** | Blind-listening evidence is required by the cross-repository audio-validation amendment. |

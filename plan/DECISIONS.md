@@ -61,3 +61,7 @@ Tool: **Mull 0.34.0 line**, version-matched packages `mull-19` + `clang-19` on `
 
 **DR-8 — Default rule (unanticipated situations), restated verbatim from the protocol:**
 > Choose the most reversible option that does not expand scope, log it in `DEVIATIONS.md` with rationale, and continue — **unless** it touches frozen tests, security, data integrity, a public interface, research integrity, or (upward) a statement's evidence class, in which case halt and write `BLOCKED.md`.
+
+### D-012 — Blind listening amendment for G-010 — recorded 2026-11-02T14:15:19Z
+
+Decision: integrate the cross-repository blind-listening protocol into the existing branch and gate without creating a replacement implementation line. Freeze 12 onset pairs, initial seed `20261103`, RMS −23 dBFS, 1.0 s clips, 10 ms fades, 44.1 kHz PCM-24 WAV, pass at ≤8/12, maximum three rounds, and mandatory demos. Evidence is `realism`; Dry DI is not a realism reference; final tonal content must be judged before release packaging. The current state is `blocked` until the prerequisites in `plan/LISTENING-AMENDMENT.md` are complete.

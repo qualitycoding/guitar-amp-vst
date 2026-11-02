@@ -29,3 +29,12 @@
 - `G-001` is **not required** (math/computational profiles inactive — see `plan/PROFILE.md`).
 - While halted at a gate, the implementer may continue any step that does not depend on the gate's outcome, but never an external or irreversible action (G-002).
 - Gate files are named `GATE-<id>.md` at repo root on the implementation branch.
+
+## G-010 — blind listening gate `realism`
+
+- **Trigger step:** S-LISTEN after applicable implementation/review prerequisites and before downstream packaging/retrospective work.
+- **Evidence bundle:** `GATE-G-010.LISTENING.md` and `listening/G-010/round-001/` containing the machine-readable `result.json`, ordered locked answers, exact score and one-sided binomial p-value, side-bias count, verbatim findings, reference/candidate provenance and checksums, pair-builder settings, render manifest, demo definitions, and `SHA256SUMS`.
+- **Frozen primary condition:** 12 matched onset pairs, initial seed `20261103`, common RMS −23 dBFS, 1.0 s clips, 10 ms fades, 44.1 kHz PCM-24 WAV, pass at ≤8/12 with no unresolved qualitative finding. Maximum three total rounds; rounds 2 and 3 use the initial seed +1000/+2000.
+- **Questions for the human:** ordered A/B reference choices for all 12 pairs, then the repository-specific demo/weak-spot questions in `plan/LISTENING-AMENDMENT.md`.
+- **Allowed responses:** `proceed`, `iterate: <notes>`, `proceed-with-rescope: <text>`, `stop`.
+- **Plan branches:** see `plan/LISTENING-AMENDMENT.md`; downstream resume is `S-016`. `stop` and `blocked` leave this gate open with the reason and next prerequisite recorded.

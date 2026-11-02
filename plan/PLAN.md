@@ -413,6 +413,34 @@ Every step follows the Rule 3.1 template. Independent steps may run concurrently
 - Lessons applied: none
 - Exclusive resources: git remote (tag push)
 
+### S-LISTEN — blind listening execution for G-010
+- Tier: Opus
+- Profile: audio/software
+- Depends on: applicable implementation steps, S-REVIEW/S-ADVERSARIAL where required, and all named prerequisites
+- Inputs: `plan/LISTENING-AMENDMENT.md`, `listening/G-010/round-001/result.json`, frozen metrics, reference/candidate render manifests
+- Actions:
+  0. **Ordering amendment:** final original/CC0 IR selection, provenance, and a candidate render refresh are S-015 pre-gate work; S-016 verifies those approved tonal assets and performs packaging/installers only. G-010 judges the actual tonal content intended for release.
+
+  1. Verify all prerequisites are complete; if any is missing, leave this step `blocked` and update the native checkpoint/log.
+  2. Prepare owner-local `listening-work/G-010/round-001/` with matched `ref/`, `cand/`, concealed `blind/`, `events/`, `demos/`, and a listener-only bundle.
+  3. Build 12 onset pairs with `scripts/make_blind_pairs.py --window start --seconds 1.0 --rms-db -23.0 --fade 0.010 --fs 44100 --seed 20261103`; retain the pre-match level metrics and all hashes.
+  4. Render every demo from reproducible event/session inputs; demos are mandatory even if the numeric score passes.
+  5. Collect ordered A/B answers and verbatim qualitative findings before disclosing the key.
+  6. Score locally with `scripts/score_blind.py`; record the exact one-sided binomial p-value and side-bias count in `listening/G-010/round-001/result.json`.
+  7. Respond only with: `proceed`, `iterate: <notes>`, `proceed-with-rescope: <text>`, `stop`.
+- Outputs: `listening/G-010/round-001/result.json`, `answers.txt`, `score.txt`, `findings.md`, `metrics.md`, `provenance.md`, `render-manifest.json`, `SHA256SUMS`, and `GATE-G-010.LISTENING.md`.
+- Evidence produced: primary 12-pair onset score, reproducible demos, weak-spot answers, provenance/checksums, and this repository's next-step checkpoint update.
+- Done when: prerequisites pass, ≤8/12 on the primary set, no unresolved qualitative finding material to the gate purpose, evidence/result records are complete, and the response names `S-016`.
+- Checkpoint: keep the existing native checkpoint/run ID; add a listening pointer, round, status, candidate commit, and exact next action.
+- On failure or missing prerequisite: set `status = blocked`; do not manufacture a score or relax any frozen metric.
+- Gate: G-010
+- Relevant decisions/claims: D-012
+- Blockers recorded now:
+  - S-015 Live record/render evidence is incomplete.
+  - Unresolved review/host prerequisites must finish first.
+  - Redistribution-compatible real-amp/reference recordings or an explicit demos-only rescope decision are required.
+- Claim guard: Dry DI is not a realism reference; final tonal content must be judged before release packaging.
+
 ### S-RETRO Retrospective
 - Tier: Opus, fresh context
 - Profile: software
