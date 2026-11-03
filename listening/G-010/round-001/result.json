@@ -20,17 +20,22 @@
     },
     {
       "id": "PR-003",
-      "status": "blocked",
-      "evidence": "Redistribution-compatible real-amp/reference recordings or an explicit demos-only rescope decision are required."
+      "status": "partial",
+      "evidence": "Real-amp references with paired DIs: 14 presets in references/audio (CC BY 4.0: Marshall JVM 410H, EVH 5150 III/EG-IPT), 5 local-only (CC BY-NC 4.0: Fender Blues Jr, Mesa Mark V), 5 with none (Chainsaw p11-p12, Frost p13-p14/p24). See references/README.md and references/manifest.json."
     }
   ],
   "frozen_metrics": [],
   "reference": {
-    "kind": "not-rendered",
-    "source_ids": [],
-    "licence_or_consent": "not-established",
-    "redistribution": "private-local-only",
-    "checksums": ""
+    "kind": "real-amp recordings with simultaneous DI (partial coverage)",
+    "source_ids": [
+      "10.5281/zenodo.7970723",
+      "10.5281/zenodo.15205644",
+      "10.5281/zenodo.10797977",
+      "10.5281/zenodo.10796864"
+    ],
+    "licence_or_consent": "CC BY 4.0 (vendored); CC BY-NC 4.0 (local-only, not committed)",
+    "redistribution": "CC BY 4.0 excerpts committed under references/audio with ATTRIBUTION.md; CC BY-NC excerpts private-local-only",
+    "checksums": "references/manifest.json (pcm_sha256 per file)"
   },
   "candidate_renders": {
     "manifest": "",

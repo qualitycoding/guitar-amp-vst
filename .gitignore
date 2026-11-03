@@ -23,3 +23,6 @@ validation/*.png
 
 # Keep .checkpoints/ committed (protocol requirement) but not local snapshots
 .checkpoints/snapshots/
+
+# Local listening work and CC BY-NC reference excerpts (never commit; see references/README.md)
+listening-work/
