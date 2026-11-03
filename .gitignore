@@ -25,4 +25,3 @@ validation/*.png
 .checkpoints/snapshots/
 
 # Local listening work and CC BY-NC reference excerpts (never commit; see references/README.md)
-listening-work/
