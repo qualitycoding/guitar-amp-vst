@@ -18,13 +18,6 @@ namespace gramp
     pre-emphasis gain, which left the 2-8 kHz band 10-25 dB under real-amp references. */
 inline constexpr float deEmphasisFraction = 0.5f;
 
-/*  G-010 round 2 (D-001y): the real references keep crest factor ~10 dB and a flat 1-8 kHz spectrum; with
-    the whole spectrum going through one memoryless shaper the guitar's low notes dominate the clipping and
-    little energy reaches 2-8 kHz (crest 4-7 dB). Real amps high-pass between gain stages (coupling caps).
-    The shaper therefore sees the signal above this corner; the lows go through a separate path at this weight. */
-inline constexpr float couplingCornerHz = 150.0f;
-inline constexpr float lowPathMix = 0.3f;
-
 class PreampStage
 {
 public:
@@ -35,7 +28,6 @@ public:
         const float outG  = secondStage ? row.s2OutGainDb : row.s1OutGainDb;
         driveBase         = secondStage ? row.s2Drive     : row.s1Drive;
         tanhBlend         = row.tanhBlend;
-        expSetup (sampleRate);
 
         preEmphasis.coefficients  = juce::dsp::IIR::Coefficients<float>::makeHighShelf (
             sampleRate, preF, 0.7071f, juce::Decibels::decibelsToGain (preG));
@@ -58,7 +50,6 @@ public:
         const float outG  = secondStage ? row.s2OutGainDb : row.s1OutGainDb;
         driveBase         = secondStage ? row.s2Drive     : row.s1Drive;
         tanhBlend         = row.tanhBlend;
-        expSetup (sampleRate);
 
         biquad::highShelf (*preEmphasis.coefficients,  sampleRate, preF, 0.7071f, juce::Decibels::decibelsToGain (preG));
         biquad::highShelf (*postEmphasis.coefficients, sampleRate, preF, 0.7071f, juce::Decibels::decibelsToGain (-preG * deEmphasisFraction));
@@ -70,14 +61,15 @@ public:
 
     void reset()
     {
-        hpLp = 0.0f;
         preEmphasis.reset();
         postEmphasis.reset();
     }
 
     void setDrive (float driveKnob) noexcept   // 0..1, smoothed upstream
     {
-        drive = driveBase * (0.25f + 3.75f * juce::jlimit (0.0f, 1.0f, driveKnob));
+        // D-001z: square-root knob law. A linear law left mid-knob settings with too little gain: the low-drive
+        // presets made 15-35 dB less 2-8 kHz energy than real amps (G-010 rounds 1-2). Ends of travel are unchanged.
+        drive = driveBase * (0.25f + 3.75f * std::sqrt (juce::jlimit (0.0f, 1.0f, driveKnob)));
     }
 
     void process (float* const data, int numSamples) noexcept
@@ -85,15 +77,9 @@ public:
         for (int i = 0; i < numSamples; ++i)
         {
             float x = data[i];
-            // split band: the shaper sees the signal above the coupling corner; the lows take their own,
-            // lightly weighted shaper path so they do not mask the highs inside the clipper
-            hpLp += hpA * (x - hpLp);
-            const float low = hpLp;
-            x -= low;
             x = preEmphasis.processSample (x);
             x *= drive;
             x = shape (x);
-            x += lowPathMix * shape (low * drive);
             x *= outGain;
             x = postEmphasis.processSample (x);
             data[i] = x;
@@ -113,12 +99,6 @@ private:
         return (1.0f - tanhBlend) * cubic + tanhBlend * th;
     }
 
-    void expSetup (double sr)
-    {
-        hpA = 1.0f - std::exp (-2.0f * juce::MathConstants<float>::pi * couplingCornerHz / (float) sr);
-        hpLp = 0.0f;
-    }
-    float hpA = 0.0f, hpLp = 0.0f;
     float driveBase = 1.0f, drive = 1.0f, outGain = 1.0f, tanhBlend = 0.5f;
     juce::dsp::IIR::Filter<float> preEmphasis, postEmphasis;
 };
