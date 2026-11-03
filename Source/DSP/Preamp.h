@@ -13,6 +13,11 @@
 
 namespace gramp
 {
+/*  G-010 round 1 (D-001x): the post-shaper shelf undoes only this fraction of the pre-emphasis boost.
+    A full undo (1.0) also cut the harmonics the shaper had just made above the shelf corner by the whole
+    pre-emphasis gain, which left the 2-8 kHz band 10-25 dB under real-amp references. */
+inline constexpr float deEmphasisFraction = 0.5f;
+
 class PreampStage
 {
 public:
@@ -27,7 +32,7 @@ public:
         preEmphasis.coefficients  = juce::dsp::IIR::Coefficients<float>::makeHighShelf (
             sampleRate, preF, 0.7071f, juce::Decibels::decibelsToGain (preG));
         postEmphasis.coefficients = juce::dsp::IIR::Coefficients<float>::makeHighShelf (
-            sampleRate, preF, 0.7071f, juce::Decibels::decibelsToGain (-preG));
+            sampleRate, preF, 0.7071f, juce::Decibels::decibelsToGain (-preG * deEmphasisFraction));
 
         const juce::dsp::ProcessSpec spec { sampleRate, 128, 2 };
         preEmphasis.prepare (spec);
@@ -47,7 +52,7 @@ public:
         tanhBlend         = row.tanhBlend;
 
         biquad::highShelf (*preEmphasis.coefficients,  sampleRate, preF, 0.7071f, juce::Decibels::decibelsToGain (preG));
-        biquad::highShelf (*postEmphasis.coefficients, sampleRate, preF, 0.7071f, juce::Decibels::decibelsToGain (-preG));
+        biquad::highShelf (*postEmphasis.coefficients, sampleRate, preF, 0.7071f, juce::Decibels::decibelsToGain (-preG * deEmphasisFraction));
         preEmphasis.reset();
         postEmphasis.reset();
         setDrive (0.5f);
