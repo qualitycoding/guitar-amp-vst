@@ -1,2 +1,6 @@
 tests/** text eol=lf
+# Audio and other binary test data must not get line-ending conversion (later lines override the rule above)
+tests/**/*.wav binary
+tests/**/*.flac binary
+*.wav binary
 *.flac binary
