@@ -2,11 +2,11 @@
   "schema_version": 1,
   "repository": "qualitycoding/guitar-amp-vst",
   "branch": "impl-run-20261027T120000Z-guitar-amp-vst",
-  "candidate_commit": "edd8f90a7886f2e9da67e1f029ef0485153a6c74",
+  "candidate_commit": "fd21c33",
   "gate_id": "G-010",
   "round": 1,
   "test_type": "realism",
-  "status": "blocked",
+  "status": "scored-fail",
   "prerequisites": [
     {
       "id": "PR-001",
@@ -38,12 +38,12 @@
     "checksums": "references/manifest.json (pcm_sha256 per file)"
   },
   "candidate_renders": {
-    "manifest": "",
+    "manifest": "listening-work/G-010/round-001/cand (14 files, rendered by scripts/render_candidates.py from references/manifest.json overrides)",
     "checksums": ""
   },
   "pair_builder": {
     "script": "scripts/make_blind_pairs.py",
-    "commit": "",
+    "commit": "7bc15b6",
     "seed": 20261103,
     "pairs": 12,
     "window": "start",
@@ -61,21 +61,39 @@
     "private_location_id": "guitar-amp-vst-G-010-owner-local"
   },
   "answers": {
-    "ordered": "",
-    "submitted_at": "",
-    "same_side_count": 0
+    "ordered": "A,A,B,B,B,B,A,A,A,A,A,A",
+    "submitted_at": "2026-11-03",
+    "same_side_count": 9
   },
   "score": {
-    "correct": 0,
+    "correct": 9,
     "total": 12,
-    "one_sided_p": null,
-    "pass_condition": "correct <= 8 && no unresolved qualitative finding"
+    "one_sided_p": 0.073,
+    "pass_condition": "correct <= 8 && no unresolved qualitative finding",
+    "verdict": "fail (9/12 > 8)"
   },
-  "qualitative_findings": [],
-  "iterations": [],
+  "qualitative_findings": [
+    {
+      "verbatim": "The clean tones were practically indistinguishable but the others all had more grit in the real clip",
+      "pairs_wrong": [
+        "pair-04 p20-ambient-washtub",
+        "pair-05 p05-thrash-attack",
+        "pair-08 p06-bay-area-lead"
+      ],
+      "note": "clean pairs: pair-04 wrong, pair-06 correct"
+    }
+  ],
+  "iterations": [
+    {
+      "round": 1,
+      "measurement": "scripts/render + welch band levels, candidate (ir-mix 0) minus reference, 14 pairs: mean -6.9 dB (2-4k), -10.9 dB (4-8k), -13.0 dB (8-16k); worst Plexi/JCM800 low-drive presets -15..-37 dB; crest factor candidate 3.8-7.4 dB vs reference 9.7-11.6 dB for the 10 Marshall pairs; clean pairs within ~1 dB crest. On p02, drive 0.9 still 15 dB under reference at 4-8k; treble/presence/Eco/sag change it <2 dB.",
+      "hypothesis": "harmonic generation above ~2 kHz is too weak and the shaper is over-compressing; post-emphasis shelf (-preG per stage) additionally attenuates the generated harmonics",
+      "next_seed": 20262103
+    }
+  ],
   "response": {
-    "value": "blocked",
-    "recorded_at": "2026-11-02T14:15:19Z",
+    "value": "iterate",
+    "recorded_at": "2026-11-03",
     "file": "GATE-G-010.LISTENING.md"
   },
   "resume": {

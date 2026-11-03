@@ -315,6 +315,7 @@ int renderFile (const juce::StringArray& a)
     pumpUntilCabReady (proc);
 
     auto out = render (proc, di, 256);
+    juce::File (a[1]).deleteFile();   // writeWav appends to an existing file
     writeWav (juce::File (a[1]), out, rate);
     return 0;
 }
