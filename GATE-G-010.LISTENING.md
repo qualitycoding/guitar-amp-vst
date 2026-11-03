@@ -32,3 +32,7 @@ Dry DI is not a realism reference; final tonal content must be judged before rel
 
 Listener (verbatim): "The clean tones were practically indistinguishable but the others all had more grit in the real clip".
 Prerequisites PR-001/PR-002 remain open, so this is diagnostic. See `listening/G-010/round-001/result.json` for the measurement and the next seed (20262103).
+
+## Round 2 outcome (2026-11-03)
+
+11/12 correct, one-sided p = 0.0032: worse than round 1 (9/12). Only Bay Area Lead was missed; the two clean presets, indistinguishable in round 1, were identified. One round remains (seed 20263103). See `listening/G-010/round-002/result.json`.
