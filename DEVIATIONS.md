@@ -316,3 +316,12 @@ median are uploaded in the `bench-results-<os>` artifact.
 ### D-001w addendum - incremental runs gate per file
 
 Applying the skill showed that a project-wide floor on a single changed file would fail every change to files that legitimately score below it (CabIR.h 62.5 %, UserIRLoader.cpp 61.5 %, OversampledStage.h 50 %, with justified survivors in `reviews/MUTATION.md`). Incremental runs therefore gate each changed file against its score from the last full run (`reviews/mutation-baseline.json`, from run 41308370137, tolerance 5 points); full runs keep the 75 % project floor with at least 150 mutants. Refresh the baseline from a full run when scores legitimately move (`tools/ci/mull_score.py --write-baseline`); lowering a recorded score is a reviewed decision.
+
+### D-001x / D-001y - preamp stage changes after G-010 round 1
+
+Round 1 (9/12, listener: "the others all had more grit in the real clip") and the band/crest measurement against the real-amp references showed the candidates 7-13 dB under the references above 2 kHz and 4-7 dB under in crest factor. Two general changes in `Source/DSP/Preamp.h`:
+
+- **D-001x** the post-shaper shelf undoes half of the pre-emphasis boost (`deEmphasisFraction` 0.5). Effect on its own: about 1 dB at 8-16 kHz.
+- **D-001y** the shaper sees the signal above a 150 Hz coupling corner (one-pole high-pass); the lows go through a separate shaper path at weight 0.3 (`couplingCornerHz`, `lowPathMix`). Mean gap to the references, 2-4 kHz / 4-8 kHz / 8-16 kHz: -6.9/-10.7/-11.8 dB before, -3.4/-7.8/-8.9 dB after; crest 7.5 dB to 10.4 dB (references 11.1). The 80-250 Hz band falls to -8.4 dB against the references.
+- Music loudness fell about 4 dB. The frozen T-005 peak bound blocks raising `loudnessGainDb` (+0.3 of the needed change already fails it), so the trims were lowered to equalise the voicings instead (Tweed unchanged at +1.7, Plexi +0.39, JCM800 -0.78, Recto -2.10, 5150 -2.59, Chainsaw -3.54, Frost -3.73). Voicing spread 0.81 dB by BS.1770 K-weighting (limit 1.5); the plugin is about 5 dB quieter at the same master setting. All 31 ctest targets pass. Mull was not re-run, so T-070 for `Preamp.h` is unchecked.
+- Constants are set from the pooled 14-pair measurement, not per clip. The corner was chosen by sweeping 0-1000 Hz and taking the first value where crest factor reaches the references' (about 150-200 Hz).

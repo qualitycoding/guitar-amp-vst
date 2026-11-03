@@ -88,7 +88,8 @@
       "round": 1,
       "measurement": "scripts/render + welch band levels, candidate (ir-mix 0) minus reference, 14 pairs: mean -6.9 dB (2-4k), -10.9 dB (4-8k), -13.0 dB (8-16k); worst Plexi/JCM800 low-drive presets -15..-37 dB; crest factor candidate 3.8-7.4 dB vs reference 9.7-11.6 dB for the 10 Marshall pairs; clean pairs within ~1 dB crest. On p02, drive 0.9 still 15 dB under reference at 4-8k; treble/presence/Eco/sag change it <2 dB.",
       "hypothesis": "harmonic generation above ~2 kHz is too weak and the shaper is over-compressing; post-emphasis shelf (-preG per stage) additionally attenuates the generated harmonics",
-      "next_seed": 20262103
+      "next_seed": 20262103,
+      "change": "D-001x partial de-emphasis (round-2 pairs v1), then D-001y 150 Hz coupling corner + 0.3 low path (round-2 pairs final); see DEVIATIONS.md"
     }
   ],
   "response": {
