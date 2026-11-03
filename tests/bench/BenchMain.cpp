@@ -6,6 +6,10 @@
                             -> bench-results.json on stdout or --out <file>
     --render-voicings <dir> S-009: render a 10 s DI clip per voicing at defaults
     --render-presets <dir>  S-015 support: render one 10 s clip per factory preset
+    --render-file <in.wav> <out.wav> <preset-index> [id=value ...]
+                            G-010: render an arbitrary mono/stereo DI through one factory
+                            preset (0-based) at the DI's sample rate; id=value overrides
+                            are applied after the preset loads (plain parameter values)
     --out <file>            JSON output path (default: stdout)
 */
 #include "../TestSupport.h"
@@ -282,6 +286,38 @@ int renderPresets (const juce::File& dir)
     }
     return 0;
 }
+
+int renderFile (const juce::StringArray& a)
+{
+    juce::AudioFormatManager afm;
+    afm.registerBasicFormats();
+    std::unique_ptr<juce::AudioFormatReader> reader (afm.createReaderFor (juce::File (a[0])));
+    if (reader == nullptr)
+        return 3;
+
+    const double rate = reader->sampleRate;
+    const int n = (int) reader->lengthInSamples;
+    juce::AudioBuffer<float> di (1, n);
+    reader->read (&di, 0, n, 0, true, false);
+
+    GrimAmpAudioProcessor proc;
+    proc.prepareToPlay (rate, 256);
+    if (! proc.getPresetManager().loadPreset (a[2].getIntValue()))
+        return 4;
+    for (int i = 3; i < a.size(); ++i)
+    {
+        const auto id = a[i].upToFirstOccurrenceOf ("=", false, false);
+        auto* p = proc.apvts.getParameter (id);
+        if (p == nullptr)
+            return 5;
+        p->setValueNotifyingHost (p->convertTo0to1 (a[i].fromFirstOccurrenceOf ("=", false, false).getFloatValue()));
+    }
+    pumpUntilCabReady (proc);
+
+    auto out = render (proc, di, 256);
+    writeWav (juce::File (a[1]), out, rate);
+    return 0;
+}
 } // namespace
 
 int main (int argc, char* argv[])
@@ -303,10 +339,17 @@ int main (int argc, char* argv[])
             return runBench (outFile);
         if (args[i] == "--render-voicings" && i + 1 < args.size())
             return renderVoicings (juce::File (args[++i]));
+        if (args[i] == "--render-file" && i + 3 < args.size())
+        {
+            juce::StringArray rest;
+            for (int j = i + 1; j < args.size(); ++j)
+                rest.add (args[j]);
+            return renderFile (rest);
+        }
         if (args[i] == "--render-presets" && i + 1 < args.size())
             return renderPresets (juce::File (args[++i]));
     }
 
-    std::cerr << "usage: grimamp_bench --bench [--out f] | --render-voicings <dir> | --render-presets <dir>\n";
+    std::cerr << "usage: grimamp_bench --bench [--out f] | --render-voicings <dir> | --render-presets <dir> | --render-file <in> <out> <preset> [id=value...]\n";
     return 2;
 }
