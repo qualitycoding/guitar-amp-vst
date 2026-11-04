@@ -18,6 +18,18 @@ namespace gramp
     pre-emphasis gain, which left the 2-8 kHz band 10-25 dB under real-amp references. */
 inline constexpr float deEmphasisFraction = 0.5f;
 
+/*  G-010 research round (D-001aa): real preamp stages are not memoryless and not symmetric. Grid current and
+    the cathode bypass capacitor shift each stage's operating point with the signal envelope, so clipping is
+    asymmetric (even harmonics) and the shift relaxes between notes (Pakarinen & Yeh 2009; Karjalainen et al.
+    2006; Kuroki & Ito 1998). Each stage biases its shaper by a fixed part plus an envelope-driven part, and a
+    15 Hz coupling high-pass removes the resulting DC. Measured against the real-amp references this restores
+    the crest factor (6.9 to 10.4 dB; references 11.1) and the 80-250 Hz weight. Constants are pooled, not per clip. */
+inline constexpr float stageBiasStatic = 0.4f;
+inline constexpr float stageBiasDynamic = 0.5f;
+inline constexpr float stageEnvAttackSec = 0.001f;
+inline constexpr float stageEnvReleaseSec = 0.05f;
+inline constexpr float stageCouplingHz = 15.0f;
+
 class PreampStage
 {
 public:
@@ -28,6 +40,7 @@ public:
         const float outG  = secondStage ? row.s2OutGainDb : row.s1OutGainDb;
         driveBase         = secondStage ? row.s2Drive     : row.s1Drive;
         tanhBlend         = row.tanhBlend;
+        setupBias (sampleRate);
 
         preEmphasis.coefficients  = juce::dsp::IIR::Coefficients<float>::makeHighShelf (
             sampleRate, preF, 0.7071f, juce::Decibels::decibelsToGain (preG));
@@ -50,6 +63,7 @@ public:
         const float outG  = secondStage ? row.s2OutGainDb : row.s1OutGainDb;
         driveBase         = secondStage ? row.s2Drive     : row.s1Drive;
         tanhBlend         = row.tanhBlend;
+        setupBias (sampleRate);
 
         biquad::highShelf (*preEmphasis.coefficients,  sampleRate, preF, 0.7071f, juce::Decibels::decibelsToGain (preG));
         biquad::highShelf (*postEmphasis.coefficients, sampleRate, preF, 0.7071f, juce::Decibels::decibelsToGain (-preG * deEmphasisFraction));
@@ -61,6 +75,7 @@ public:
 
     void reset()
     {
+        env = dcLp = 0.0f;
         preEmphasis.reset();
         postEmphasis.reset();
     }
@@ -79,7 +94,14 @@ public:
             float x = data[i];
             x = preEmphasis.processSample (x);
             x *= drive;
-            x = shape (x);
+            {
+                const float a = std::abs (x);
+                env += (a > env ? envAtk : envRel) * (a - env);
+                const float b = stageBiasStatic + stageBiasDynamic * env;
+                const float y = shape (x + b) - shape (b);    // zero in, zero out: silence stays silent (T-004)
+                dcLp += dcA * (y - dcLp);
+                x = y - dcLp;
+            }
             x *= outGain;
             x = postEmphasis.processSample (x);
             data[i] = x;
@@ -99,6 +121,14 @@ private:
         return (1.0f - tanhBlend) * cubic + tanhBlend * th;
     }
 
+    void setupBias (double sr) noexcept
+    {
+        envAtk = 1.0f - std::exp (-1.0f / (stageEnvAttackSec * (float) sr));
+        envRel = 1.0f - std::exp (-1.0f / (stageEnvReleaseSec * (float) sr));
+        dcA = 1.0f - std::exp (-2.0f * juce::MathConstants<float>::pi * stageCouplingHz / (float) sr);
+        env = dcLp = 0.0f;
+    }
+    float env = 0.0f, dcLp = 0.0f, envAtk = 0.0f, envRel = 0.0f, dcA = 0.0f;
     float driveBase = 1.0f, drive = 1.0f, outGain = 1.0f, tanhBlend = 0.5f;
     juce::dsp::IIR::Filter<float> preEmphasis, postEmphasis;
 };
