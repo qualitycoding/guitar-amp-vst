@@ -36,3 +36,7 @@ Prerequisites PR-001/PR-002 remain open, so this is diagnostic. See `listening/G
 ## Round 2 outcome (2026-11-03)
 
 11/12 correct, one-sided p = 0.0032: worse than round 1 (9/12). Only Bay Area Lead was missed; the two clean presets, indistinguishable in round 1, were identified. One round remains (seed 20263103). See `listening/G-010/round-002/result.json`.
+
+## Round 3 outcome (2026-11-04)
+
+7/12 correct, one-sided p = 0.3872: passes the numeric rule (at most 8/12) and is statistically indistinguishable from chance. No adverse qualitative finding was given. Open: PR-001/PR-002 (S-015 Live evidence, review/host prerequisites); references were partial/weak matches and cover 14 of 24 presets (none for Chainsaw/Frost). Awaiting `proceed`, `iterate`, `proceed-with-rescope` or `stop`.
