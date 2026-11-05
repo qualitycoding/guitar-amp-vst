@@ -64,6 +64,14 @@ are AGPL-3.0 or commercially licensed. Committing non-commercial material would 
 into a tree that otherwise has none. The script cuts those excerpts into `listening-work/`, which is ignored by Git.
 This matches the private-local evidence route that `listening/G-010/round-001/result.json` already records.
 
+**Source policy (owner, 2026-11-05; `DEVIATIONS.md` D-001ac).** GrimAmp is not a commercial development, so
+non-commercial material (CC BY-NC, and CC BY-NC-ND for local renders) may be used locally. Such material is never
+committed. The repository records where it came from instead: DOI or URL, member path, time window and PCM checksum,
+so that anyone can rebuild it. A local-only source is used only when no less restrictively licensed source of equal or
+better match exists. Sources with no licence at all are still excluded; the non-commercial status does not grant
+rights the owner never gave. Per-source verdicts are in
+[`../research/G-010-reference-gap-research.md`](../research/G-010-reference-gap-research.md) §G.
+
 ## Rendering the candidates
 
 Render each candidate from `di/<stem>.wav`, using the preset named in the manifest and applying that entry's

@@ -1,6 +1,6 @@
 ---
 id: K-20261105T162900Z-amp-reference-material-sources
-statement: "As of 2026-11-05, no CC BY or CC0 real recording with a paired DI exists online for a Boss HM-2, a black-metal rig, a 5E3 Tweed Deluxe, a Mesa Dual Rectifier or a high-gain 5150/6505. Real recordings of Mark V, Engl, Mesa 550 and 6505 amps exist but carry no licence or a non-commercial one. TONE3000 has T3K-licensed NAM captures of all of these. The T3K licence lets rendered output be published but forbids redistributing the capture."
+statement: "As of 2026-11-05, no CC BY or CC0 real recording with a paired DI exists online for a Boss HM-2, a black-metal rig, a 5E3 Tweed Deluxe, a Mesa Dual Rectifier or a high-gain 5150/6505. Real recordings of Mark V, Engl, Mesa 550 and 6505 amps exist but carry no licence or a non-commercial one. TONE3000 has T3K-licensed NAM captures of all of these. The T3K licence lets rendered output be published but forbids redistributing the capture. For a non-commercial project, CC BY-NC and CC BY-NC-ND material may be used locally; unlicensed material may not be used at all."
 status: current
 supersedes: []
 tags: [subject:amp-reference-datasets, subject:dataset-licensing, tech:nam, tech:zenodo, domain:audio, domain:guitar-amp-modelling, phase:research]
@@ -15,6 +15,28 @@ recorded_at: 2026-11-05T16:29:00Z
 Every site searched for real guitar-amp and pedal reference material, with what each one holds. "Usable" means the
 material can be committed to an AGPL/Apache repo (CC BY, CC0, or output-publishable). Licences can change, so re-read
 them before vendoring.
+
+## Commit or local use, per source
+
+"Local use" assumes a **non-commercial** project (true for guitar-amp-vst, owner decision 2026-11-05). A commercial
+project loses every row marked NC. Origin references (DOI/URL, member path, window, checksum) and your own
+measurements may always be committed.
+
+| Source | Licence | Commit audio/renders | Local use (non-commercial project) |
+|---|---|---|---|
+| Zenodo: JVM 410H, EG-IPT, EGFxSet, Guitar-TECHS, EGSet12, GUITAR-FX-DIST, ToneTwist 2026-05-15 software entries | CC BY 4.0 | yes, with attribution | yes |
+| Zenodo: ToneTwist hardware entries, pOD-set | CC BY-NC 4.0 | no (keeps a field-of-use restriction out of an open tree) | yes |
+| Zenodo 19112212, ratings corpus | restricted | no | no, until access is granted |
+| TONE3000 `t3k` captures | T3K | renders yes; `.nam` file no | yes |
+| TONE3000 `cc-by-nc` captures (e.g. 1104) | CC BY-NC | no | yes |
+| TONE3000 `cc-by-nc-nd` captures (e.g. 1614) | CC BY-NC-ND | no; renders are adapted material, which ND forbids sharing | yes |
+| GitHub `Alec-Wright/Automated-GuitarAmpModelling`, `GuitarML/GuitarLSTM`, `GuitarML/PedalNetRT` data | GPL-3.0 | yes, under GPL terms and if the tree's licence is compatible | yes |
+| GitHub `IoSR-Surrey/DNNAmplifierDemos` | none | no | no. GitHub's terms allow only viewing, playing and forking on github.com, and the clips are commercial songs. |
+| GitHub `TSchmitzULG/NeuralNetwork_Comparison` | none | no | no. The ToneTwist CC BY-NC copies of Mark V, Mesa 550, Engl Drive, HT-5 Metal and TSA15 are the licensed route. |
+| GitHub `stepanmk/grey-box-amp` | none | no | no (the same JVM data is CC BY upstream) |
+| eprints.hud.ac.uk (Herbst 2017) | repository terms: non-commercial, unchanged | no; cite facts | yes (read) |
+| catalinbread.com, articles.boss.info, mirosol.kapsi.fi | all rights reserved | no; cite facts | yes (read) |
+| en.wikipedia.org | CC BY-SA 4.0 (text) | text only under CC BY-SA; cite facts | yes |
 
 ## Datasets and audio
 

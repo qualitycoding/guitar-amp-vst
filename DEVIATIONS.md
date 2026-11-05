@@ -334,6 +334,23 @@ Round 2 (11/12, listener: "the real clips have more grit and more weight") showe
 
 After round 3 (7/12) the human asked for further research before another listening round. The literature (research/G-010-preamp-research.md) says real preamp stages are asymmetric and not memoryless: grid current and the cathode bypass capacitor move the bias with the signal envelope. Each `PreampStage` now shapes `x + b` with `b = 0.4 + 0.5 * envelope`, subtracts `shape(b)`, and blocks the DC with a 15 Hz one-pole high-pass (envelope attack 1 ms, release 50 ms). Measured on the 14 reference pairs: crest factor 6.9 to 10.4 dB (references 11.1), 80-250 Hz gap -3.3 to -0.8 dB; the 2-8 kHz gap barely changes (-5.6/-8.2 dB). Loudness fell about 6.7 dB at the old trims and the frozen sine-peak bound (T-005) blocks raising them, so the trims of every voicing but Tweed were lowered: Plexi -1.22, JCM800 -2.14, Recto -3.38, 5150 -3.77, Chainsaw -4.60, Frost -4.86 (Tweed +0.04 unchanged). Voicing spread 0.45 dB. The plugin is now about 6.7 dB quieter than at round 3 at the same master setting, which needs a human decision (master make-up gain or amending T-005's peak bound). 31/31 ctest. Mull not re-run.
 
+### D-001ac - reference-source licence policy (owner decision, 2026-11-05)
+
+The owner stated that GrimAmp is not a commercial development. That settles the open risk in using CC BY-NC
+reference data: the "commercial advantage" test in the licence does not apply. Policy for G-010 references and later
+ones:
+
+- Non-commercial material (CC BY-NC; CC BY-NC-ND for locally produced renders) may be used locally for development
+  and listening.
+- It is never committed or shipped. The repository records its origin (DOI/URL, member path, window, checksum) so the
+  local copy can be rebuilt. This keeps the committed tree free of a field-of-use restriction for downstream users.
+- A local-only source is used only when no less restrictively licensed source of equal or better match exists.
+  "Match" is compared within one evidence tier: real recordings against real recordings, NAM captures against
+  captures. A capture never displaces a real recording, and a real recording never displaces a capture.
+- Sources with no licence (all rights reserved) stay excluded. Non-commercial status grants nothing there.
+
+Per-source verdicts and the resulting choice per voicing: `research/G-010-reference-gap-research.md` §G.
+
 ### D-001ab - high-band shaper in each preamp stage (G-010 round 5)
 
 After round 4 (11/12) the listener said brightness was the cue. In the 1 s onset windows played, the real amp had 10-17 dB more energy above 2 kHz for the low-drive presets, and the reference was brighter in 9 of 12 pairs. Each `PreampStage` now splits its input at 1.2 kHz (one-pole), shapes the high part with gain `6 * drive^2` through the stage shaper, and adds it at weight 0.1 before the output gain (multiband waveshaping after Fernandez-Cid & Quiros 2001 as described in Pakarinen & Yeh 2009; the `drive^2` law keeps the clean presets almost untouched). Onset-window mean absolute gap above 2 kHz, over the 14 reference pairs: 7.0 dB to 4.5 dB; 12 s band gaps: 2-4 kHz -5.6 to -2.3 dB, 4-8 kHz -8.2 to -3.3 dB, 8-16 kHz -7.8 to -0.4 dB. Remaining: Southern Rock, Classic Rock Crunch, Funeral March and Crunch Rhythm still 9-11 dB short in the onset window (the JVM OD1 channel at gain 5 is hotter than the Plexi/5150 presets at their knob settings, so this is partly a reference mismatch, not a fixable constant); Thrash Attack and Bay Area Lead are 4-6 dB too bright. Larger weights or fixed (drive-independent) gain overshoot the clean presets by 20-28 dB. Loudness moved by less than 0.4 dB (spread 0.19 dB); 31/31 ctest. Mull not re-run.

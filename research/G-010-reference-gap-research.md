@@ -134,24 +134,26 @@ that.
 ### B4. Other blocked items
 
 - TONE3000 **CC BY-NC** "BOSS HM-2 Heavy Metal (MiJ) v2.0" (1104, 24 models, settings "Swede", "At the Gates",
-  "Godflesh") is local-only at most. **CC BY-NC-ND** "Tweed Deluxe 1958 DI" (1614) cannot be used.
+  "Godflesh") may be used locally (the project is non-commercial, D-001ac). Its renders stay local, and under the
+  policy it loses to the T3K HM-2 captures (571, 722). **CC BY-NC-ND** "Tweed Deluxe 1958 DI" (1614) may be used
+  locally, but its renders count as adapted material, which ND forbids sharing, so they can never be committed.
 - Wright, Dal Santo & Schlecht, "Predicting Subjective Ratings of Guitar Amplifier Emulations – Audio Corpus"
   (doi:10.5281/zenodo.19112212, 2026-06-04): access is restricted, with no licence and no file list. Worth checking
   again once the paper is out.
 
 ## C. Checked and rejected
 
-| Source | Licence | Why rejected |
-|---|---|---|
-| GUITAR-FX-DIST, Comunità (zenodo 4296040 / 4298000 / 4298017 / 4298025) | CC BY 4.0 | Processed with **plugins** (Audified Multidrive Pedal Pro, which emulates the MT-2, DS-1 and others; Mercuriall Greed Smasher), not hardware |
-| ToneTwist AFx entries dated 2026-05-15 (20213113, 20213568, 20213928, …) | CC BY 4.0 | Software (TH3 Overloud presets, Audacity effects) |
-| ToneTwist AFx hardware entries (all others) | CC BY-NC 4.0 | Same block as now. Upstreams traced in §B. |
-| EGFxSet, Pedroza et al. (zenodo 7044411) | CC BY 4.0 | Real BD-2, Mini TS and RAT2, but pedals only with no amp. Could serve later as a real boost-pedal reference. |
-| pOD-set, Dal Rì et al. (zenodo 15389653) | CC BY-NC 4.0 | Overdrive pedals, non-commercial |
-| Guitar-TECHS, Pedroza et al. (zenodo 14963133) | CC BY 4.0 | DI + miked amp, but Orange CR60, Orange Crush 12 and a Yamaha bass amp at flat EQ: low gain, no gap match |
-| EGSet12 (zenodo 11406378) | CC BY 4.0 | Yamaha B15 miked, no DI |
-| GOAT (arXiv 2509.22655) | paper CC BY 4.0 | Amp audio is DIs re-amped through NAM profiles. The dataset's own hosting and licence were not confirmed. |
-| Blues-to-jazz web-audio amp sims, Buffa et al. (zenodo 6769408) | CC BY 4.0 | Simulator description, not real-amp data |
+| Source | Licence | Local use | Why rejected |
+|---|---|---|---|
+| GUITAR-FX-DIST, Comunità (zenodo 4296040 / 4298000 / 4298017 / 4298025) | CC BY 4.0 | yes | Processed with **plugins** (Audified Multidrive Pedal Pro, which emulates the MT-2, DS-1 and others; Mercuriall Greed Smasher), not hardware |
+| ToneTwist AFx entries dated 2026-05-15 (20213113, 20213568, 20213928, …) | CC BY 4.0 | yes | Software (TH3 Overloud presets, Audacity effects) |
+| ToneTwist AFx hardware entries (all others) | CC BY-NC 4.0 | **yes** (non-commercial, D-001ac) | Not rejected for local use; they cannot be committed. Choice per voicing in §G. Upstreams traced in §B. |
+| EGFxSet, Pedroza et al. (zenodo 7044411) | CC BY 4.0 | yes | Real BD-2, Mini TS and RAT2, but pedals only with no amp. Could serve later as a real boost-pedal reference. |
+| pOD-set, Dal Rì et al. (zenodo 15389653) | CC BY-NC 4.0 | yes | Overdrive pedals only; no gap match |
+| Guitar-TECHS, Pedroza et al. (zenodo 14963133) | CC BY 4.0 | yes | DI + miked amp, but Orange CR60, Orange Crush 12 and a Yamaha bass amp at flat EQ: low gain, no gap match |
+| EGSet12 (zenodo 11406378) | CC BY 4.0 | yes | Yamaha B15 miked, no DI |
+| GOAT (arXiv 2509.22655) | paper CC BY 4.0 | unknown | Amp audio is DIs re-amped through NAM profiles. The dataset's own hosting and licence were not confirmed. |
+| Blues-to-jazz web-audio amp sims, Buffa et al. (zenodo 6769408) | CC BY 4.0 | yes | Simulator description, not real-amp data |
 
 Hugging Face dataset search ("guitar", "amp", "amplifier", "distortion") found nothing relevant.
 
@@ -215,6 +217,44 @@ Repository terms allow personal research and non-profit use only, unchanged and 
 `references/README.md` says "This repository's source is Apache-2.0", but `LICENSE` and the top-level README say
 AGPL-3.0. This decides whether GPL-3.0 data (§A3) can be vendored, and should be settled before any licence-dependent
 step. It is not changed here.
+
+## G. Licence verdicts: commit or local use
+
+Policy: `DEVIATIONS.md` D-001ac. The project is non-commercial, so non-commercial material may be used locally.
+Local-only material is never committed; the repository records where it came from. Less restrictively licensed
+material is preferred whenever it matches as well or better within the same tier. Sources with no licence stay
+excluded.
+
+"Commit" means the audio, or renders made from it, may go into the repository. "Local use" means it may be fetched
+into ignored `listening-work/` and used for measurement and listening. Origin references (DOI/URL, member path,
+window, checksum) and our own measurements may always be committed.
+
+| Source | Licence | Commit | Local use | Notes |
+|---|---|---|---|---|
+| JVM 410H (zenodo 7970723) | CC BY 4.0 | yes (vendored) | yes | Attribution in `references/ATTRIBUTION.md` |
+| EG-IPT (zenodo 15205644) | CC BY 4.0 | yes (vendored) | yes | |
+| EGFxSet, Guitar-TECHS, EGSet12, GUITAR-FX-DIST | CC BY 4.0 | yes | yes | No gap match (§C) |
+| ToneTwist hardware entries: Blues Jr, Mark V ×3, Mesa 550 ×3, Engl RT50 Drive, HT1, HT5 Metal, TSA15, JVM OD1, pedals | CC BY-NC 4.0 | no | **yes** | Refer to the record DOI. Blues Jr and Mark V are already wired as `tt_bluesjr` and `tt_markv`. |
+| pOD-set (zenodo 15389653) | CC BY-NC 4.0 | no | yes | Pedals; no gap match |
+| TONE3000 T3K captures (§A2) | T3K | renders yes; `.nam` file no | yes | Capture tier |
+| TONE3000 1104, HM-2 MiJ v2.0 | CC BY-NC | no (neither file nor renders) | yes | The T3K HM-2 captures are less restrictive, so prefer those |
+| TONE3000 1614, Tweed Deluxe 1958 DI | CC BY-NC-ND | no (renders are adapted material) | yes | The T3K 5E3 captures are less restrictive, so prefer those |
+| Wright HT-1 / Big Muff; GuitarML TS9 data | GPL-3.0 | only after §F is settled, with GPL notices | yes | No gap match |
+| IoSR-Surrey 6505 LEAD (`DNNAmplifierDemos`) | none | no | **no** | GitHub's terms allow only viewing and playing on github.com. The clips are commercial songs. Needs the request in §E. |
+| Schmitz & Embrechts (`NeuralNetwork_Comparison`) | none | no | **no** | Use the ToneTwist CC BY-NC copies of the same Mark V, Mesa 550, Engl Drive, HT-5 Metal and TSA15 sets. The Engl 10-step gain sweep exists only here. |
+| `stepanmk/grey-box-amp` demo audio | none | no | no | Not needed: the same JVM data is CC BY upstream |
+| Ratings corpus (zenodo 19112212) | restricted | no | no | Only once access is granted, under the terms it comes with |
+| Herbst 2017 (eprints.hud.ac.uk 33248) | repository terms (non-commercial, unchanged) | no (cite facts) | yes (read) | |
+
+### Source choice per voicing under the policy
+
+| Voicing | Real recording (tier 1) | Capture (separate tier) |
+|---|---|---|
+| Tweed | Blues Jr, `tt_bluesjr`, local-only (no less restrictive real recording found) | T3K 5E3: 1091, 75305 or 1691 (committable renders) |
+| Recto | Mark V Extreme, `tt_markv`, local-only | T3K Dual Rectifier Red: 1768 |
+| 5150 | JVM OD1, CC BY, weak. The local-only Engl RT50 Drive and HT-5 Metal are also weak (not 5150 circuits), so the less restrictive JVM stays. | T3K 6505 Lead: 72177 |
+| Chainsaw | none | T3K HM-2 571 / 722 chained into an amp capture. Not 1104 (NC). |
+| Frost | JVM `B5_M0_T5_G5` / `B5_M5_T5_G10`, CC BY, weak | T3K Bandit 67991, Valvestate 29995 or DS-1 215, once a Frost target is chosen |
 
 ## Suggested next steps (not done in this round)
 
