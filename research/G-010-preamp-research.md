@@ -49,3 +49,14 @@ Measured on the 1 s onset windows that were played (spectral centroid and share 
 - The envelope-bias change (D-001aa) did not change brightness, so the 7/12 vs 11/12 difference between rounds 3 and 4 is probably pair selection plus sampling noise, not D-001aa. My earlier statement that D-001aa was the likely cause was not supported.
 
 Candidate mechanism from the same review (Fernandez-Cid & Quiros 2001, multiband waveshaper): split the band, shape the high band with its own gain, sum. Not yet implemented.
+
+## Addendum 2026-11-05 (second): incorporating the reference-gap research
+
+A separate research pass (`research/G-010-reference-gap-research.md`, sources S-11 to S-16 in `research/SOURCES.md`, policy D-001ac) bears on this work in four ways:
+
+1. **Stage count.** The 5150/6505 lead channel cascades four preamp stages and a phase inverter (5 x 12AX7); our 5150 voicing has two shaper stages. This agrees with the open item above: remaining high-frequency shortfall points to stage-by-stage gain structure, not a constant. Nothing was changed for it here.
+2. **Chainsaw topology.** In the Boss HM-2 the three-band EQ (low about 87 Hz, double hump at 958 and 1279 Hz) comes after the clipping, whereas our tone stack sits at the preamp's tone-stack position. Candidate for a later DSP change, to be tested against capture-derived references.
+3. **Reference policy.** Non-commercial material (CC BY-NC) may be used locally and never committed (D-001ac). The Blues Jr and Mark V references can therefore be used for local listening, so the Tweed, Recto and Doom presets are no longer out of reach of the listening test. They were left out of rounds 1-5, so those rounds say nothing about them.
+4. **Capture tier.** TONE3000 T3K captures of a real HM-2, Dual Rectifier, 6505 and 5E3 allow rendered audio to be published. They are neural models, not recordings, and must be scored in their own tier, never pooled with real-recording pairs.
+
+Genre spectra (Herbst 2017) were noted as context only: they describe produced tracks, not amp outputs.

@@ -2,7 +2,7 @@
 
 ## v1.0.0 (draft — pending gate G-002)
 
-- Preamp stage changes after blind listening (D-001x, D-001z, D-001aa, D-001ab): bias and high-band shaping, square-root drive law; voicing trims lowered, output about 6.7 dB quieter than before at the same master setting.
+- Preamp stage changes after blind listening (D-001x, D-001z, D-001aa, D-001ab): bias and high-band shaping, square-root drive law; voicing trims lowered, output about 6.7 dB quieter than before at the same master setting (known behaviour; an output limiter may be added later, D-001ad).
 
 - Initial release: rock & metal guitar amp simulator (VST3/AU/Standalone).
 - 7 amp voicings: Tweed, Plexi, JCM800, Recto, 5150, Chainsaw, Frost.

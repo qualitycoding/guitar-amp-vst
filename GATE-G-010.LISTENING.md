@@ -58,3 +58,7 @@ Human response: `proceed-with-rescope` (recommended option accepted).
 **Affected files.** `README.md` (status and claims), `CHANGELOG.md` (v1.0.0 draft), `listening/G-010/round-005/result.json` (rescope block), `DEVIATIONS.md`, `EXECUTION_LOG.md`.
 
 **Still open before S-016 can complete:** PR-001 (S-015 Live evidence), PR-002 (review/host prerequisites), the roughly 6.7 dB loudness drop since round 3 (master make-up gain or an amended T-005 peak bound), a Mull rerun (T-070) after D-001x to D-001ab, and the two rounds beyond the three-round cap.
+
+### Update 2026-11-05 (after the rescope)
+
+New reference research (`research/G-010-reference-gap-research.md`) was merged. Under D-001ac the CC BY-NC references (Blues Jr, Mark V) may be used locally, so Tweed, Recto and Doom are testable later; they remain untested today and inside the rescope. Capture-derived references (TONE3000 T3K) would form a separate tier. No new listening round was run.
