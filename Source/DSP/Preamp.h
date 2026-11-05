@@ -30,6 +30,15 @@ inline constexpr float stageEnvAttackSec = 0.001f;
 inline constexpr float stageEnvReleaseSec = 0.05f;
 inline constexpr float stageCouplingHz = 15.0f;
 
+/*  G-010 round 5 (D-001ab): after round 4 the listener named brightness as the cue; in the played 1 s onset
+    windows the real amp had 10-17 dB more energy above 2 kHz than the candidate for the low-drive presets.
+    Multiband shaping (Fernandez-Cid & Quiros 2001, in Pakarinen & Yeh 2009): the part of each stage's input
+    above the crossover goes through its own shaper, with gain that grows with the stage drive squared (so the
+    clean presets get almost none), and is added back at a low weight. Pooled constants over the 14 references. */
+inline constexpr float highBandCornerHz = 1200.0f;
+inline constexpr float highBandGain = 6.0f;
+inline constexpr float highBandMix = 0.1f;
+
 class PreampStage
 {
 public:
@@ -75,7 +84,7 @@ public:
 
     void reset()
     {
-        env = dcLp = 0.0f;
+        env = dcLp = hiLp = 0.0f;
         preEmphasis.reset();
         postEmphasis.reset();
     }
@@ -92,6 +101,8 @@ public:
         for (int i = 0; i < numSamples; ++i)
         {
             float x = data[i];
+            hiLp += hiA * (x - hiLp);
+            const float hiOut = shape (highBandGain * drive * drive * (x - hiLp));
             x = preEmphasis.processSample (x);
             x *= drive;
             {
@@ -102,6 +113,7 @@ public:
                 dcLp += dcA * (y - dcLp);
                 x = y - dcLp;
             }
+            x += highBandMix * hiOut;
             x *= outGain;
             x = postEmphasis.processSample (x);
             data[i] = x;
@@ -126,9 +138,11 @@ private:
         envAtk = 1.0f - std::exp (-1.0f / (stageEnvAttackSec * (float) sr));
         envRel = 1.0f - std::exp (-1.0f / (stageEnvReleaseSec * (float) sr));
         dcA = 1.0f - std::exp (-2.0f * juce::MathConstants<float>::pi * stageCouplingHz / (float) sr);
-        env = dcLp = 0.0f;
+        env = dcLp = hiLp = 0.0f;
+        hiA = 1.0f - std::exp (-2.0f * juce::MathConstants<float>::pi * highBandCornerHz / (float) sr);
     }
     float env = 0.0f, dcLp = 0.0f, envAtk = 0.0f, envRel = 0.0f, dcA = 0.0f;
+    float hiA = 0.0f, hiLp = 0.0f;
     float driveBase = 1.0f, drive = 1.0f, outGain = 1.0f, tanhBlend = 0.5f;
     juce::dsp::IIR::Filter<float> preEmphasis, postEmphasis;
 };
