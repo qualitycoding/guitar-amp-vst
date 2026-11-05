@@ -6,7 +6,7 @@
   "gate_id": "G-010",
   "round": 5,
   "test_type": "realism",
-  "status": "scored-numeric-pass-awaiting-response",
+  "status": "closed-proceed-with-rescope",
   "prerequisites": [
     {
       "id": "PR-001",
@@ -101,9 +101,10 @@
     }
   ],
   "response": {
-    "value": "pending",
+    "value": "proceed-with-rescope",
     "recorded_at": "2026-11-05",
-    "file": "GATE-G-010.LISTENING.md"
+    "file": "GATE-G-010.LISTENING.md",
+    "text": "proceed-with-rescope as you recommend"
   },
   "resume": {
     "next_step": "S-016",
@@ -111,5 +112,17 @@
     "checkpoint_commit": "",
     "execution_log_commit": ""
   },
-  "note": "extra round beyond the 3-round cap, authorised by the human"
+  "note": "extra round beyond the 3-round cap, authorised by the human",
+  "rescope": {
+    "claim": "Realism against real-amp references is claimed only for the presets whose reference is a close or partial match of the same amp family (Marshall-style: the JCM800 and Plexi presets, and loosely the 5150 presets) and on the 1 s onset window at the amp-output level (no cabinet). Chainsaw and Frost presets are untested (no references). Blues/Recto/Doom presets (CC BY-NC references, not used) are untested. 5150 presets are judged only as 'a real high-gain valve amp', not as a 5150.",
+    "evidence": "rounds 1-5: 9,11,7,11,8 of 12; only rounds 3 and 5 pass the numeric rule; no round significantly better than chance.",
+    "open_items": [
+      "PR-001 S-015 Live evidence",
+      "PR-002 review/host prerequisites",
+      "plugin ~6.7 dB quieter than at round 3 at the same master setting (needs master make-up gain or amended T-005 peak bound)",
+      "Mull T-070 not re-run since D-001x..D-001ab",
+      "3-round cap exceeded by two human-authorised rounds"
+    ],
+    "resume": "S-016 once PR-001/PR-002 are met"
+  }
 }

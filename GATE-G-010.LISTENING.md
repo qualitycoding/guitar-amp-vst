@@ -1,6 +1,6 @@
 # GATE G-010 — LISTENING RESPONSE
 
-**Response:** `iterate`  
+**Response:** `proceed-with-rescope`  
 **Recorded:** 2026-11-02T14:15:19Z  
 **Repository:** `qualitycoding/guitar-amp-vst`  
 **Branch:** `impl-run-20261027T120000Z-guitar-amp-vst`  
@@ -48,3 +48,13 @@ Prerequisites PR-001/PR-002 remain open, so this is diagnostic. See `listening/G
 ## Round 5 outcome (2026-11-05, extra round)
 
 8/12 correct, one-sided p = 0.1938: passes the numeric rule (at most 8/12), exactly at the limit, not significantly different from chance. No qualitative notes given. Open: PR-001/PR-002; references partial; no references for Chainsaw/Frost. Awaiting `proceed`, `iterate`, `proceed-with-rescope` or `stop`.
+
+## Response: proceed-with-rescope (2026-11-05)
+
+Human response: `proceed-with-rescope` (recommended option accepted).
+
+**Narrowed claim.** Realism against real-amp recordings is claimed only for the Marshall-family presets that had a close or partial reference (JCM800 and Plexi presets, and loosely the 5150 presets), judged on 1 s onset windows of the amp output without a cabinet. The 5150 presets are judged only as "a real high-gain valve amp", not as a 5150. Untested: Chainsaw and Frost (no references), and the Tweed/Recto/Doom presets (their references are CC BY-NC and were not used). The plugin is not claimed to be indistinguishable from real amps: five rounds scored 9, 11, 7, 11 and 8 of 12, and only rounds 3 and 5 meet the 8/12 rule.
+
+**Affected files.** `README.md` (status and claims), `CHANGELOG.md` (v1.0.0 draft), `listening/G-010/round-005/result.json` (rescope block), `DEVIATIONS.md`, `EXECUTION_LOG.md`.
+
+**Still open before S-016 can complete:** PR-001 (S-015 Live evidence), PR-002 (review/host prerequisites), the roughly 6.7 dB loudness drop since round 3 (master make-up gain or an amended T-005 peak bound), a Mull rerun (T-070) after D-001x to D-001ab, and the two rounds beyond the three-round cap.
