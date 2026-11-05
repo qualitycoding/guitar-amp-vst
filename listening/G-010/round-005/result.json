@@ -1,0 +1,115 @@
+{
+  "schema_version": 1,
+  "repository": "qualitycoding/guitar-amp-vst",
+  "branch": "impl-run-20261027T120000Z-guitar-amp-vst",
+  "candidate_commit": "a3cb40d",
+  "gate_id": "G-010",
+  "round": 5,
+  "test_type": "realism",
+  "status": "scored-numeric-pass-awaiting-response",
+  "prerequisites": [
+    {
+      "id": "PR-001",
+      "status": "blocked",
+      "evidence": "S-015 Live record/render evidence is incomplete."
+    },
+    {
+      "id": "PR-002",
+      "status": "blocked",
+      "evidence": "Unresolved review/host prerequisites must finish first."
+    },
+    {
+      "id": "PR-003",
+      "status": "partial",
+      "evidence": "Real-amp references with paired DIs: 14 presets in references/audio (CC BY 4.0: Marshall JVM 410H, EVH 5150 III/EG-IPT), 5 local-only (CC BY-NC 4.0: Fender Blues Jr, Mesa Mark V), 5 with none (Chainsaw p11-p12, Frost p13-p14/p24). See references/README.md and references/manifest.json."
+    }
+  ],
+  "frozen_metrics": [],
+  "reference": {
+    "kind": "real-amp recordings with simultaneous DI (partial coverage)",
+    "source_ids": [
+      "10.5281/zenodo.7970723",
+      "10.5281/zenodo.15205644",
+      "10.5281/zenodo.10797977",
+      "10.5281/zenodo.10796864"
+    ],
+    "licence_or_consent": "CC BY 4.0 (vendored); CC BY-NC 4.0 (local-only, not committed)",
+    "redistribution": "CC BY 4.0 excerpts committed under references/audio with ATTRIBUTION.md; CC BY-NC excerpts private-local-only",
+    "checksums": "references/manifest.json (pcm_sha256 per file)"
+  },
+  "candidate_renders": {
+    "manifest": "listening-work/G-010/round-001/cand (14 files, rendered by scripts/render_candidates.py from references/manifest.json overrides)",
+    "checksums": ""
+  },
+  "pair_builder": {
+    "script": "scripts/make_blind_pairs.py",
+    "commit": "a3cb40d",
+    "seed": 20265103,
+    "pairs": 12,
+    "window": "start",
+    "seconds": 1.0,
+    "rms_db": -23.0,
+    "fade_seconds": 0.01,
+    "sample_rate": 44100
+  },
+  "evidence": {
+    "mode": "private-local",
+    "branch": "",
+    "commit": "",
+    "bundle": "",
+    "sha256sums": "",
+    "private_location_id": "guitar-amp-vst-G-010-owner-local"
+  },
+  "answers": {
+    "ordered": "A,A,A,A,B,A,A,A,A,B,A,A",
+    "submitted_at": "2026-11-05",
+    "same_side_count": 10
+  },
+  "score": {
+    "correct": 8,
+    "total": 12,
+    "one_sided_p": 0.1938,
+    "pass_condition": "correct <= 8 && no unresolved qualitative finding",
+    "verdict": "numeric pass (8/12 <= 8, at the limit); p=0.19, not significantly different from chance"
+  },
+  "qualitative_findings": [
+    {
+      "verbatim": "(none given for round 5)",
+      "note": "Listener picked A in 10 of 12 pairs. Wrong: pair-02 p02 Southern Rock, pair-05 p09 Death Metal Chains, pair-08 p18 Modern Prog Lead, pair-11 p19 Djent Clean. Rounds 1-4 findings: brightness (D-001ab) and weight (D-001aa)."
+    }
+  ],
+  "iterations": [
+    {
+      "round": 1,
+      "summary": "9/12"
+    },
+    {
+      "round": 2,
+      "summary": "11/12 (D-001y)"
+    },
+    {
+      "round": 3,
+      "summary": "7/12 (D-001z)"
+    },
+    {
+      "round": 4,
+      "summary": "11/12 (D-001aa envelope-driven stage bias on top of D-001z)"
+    },
+    {
+      "round": 5,
+      "summary": "8/12 (D-001ab high-band shaper)"
+    }
+  ],
+  "response": {
+    "value": "pending",
+    "recorded_at": "2026-11-05",
+    "file": "GATE-G-010.LISTENING.md"
+  },
+  "resume": {
+    "next_step": "S-016",
+    "checkpoint_file": ".checkpoints/state.json",
+    "checkpoint_commit": "",
+    "execution_log_commit": ""
+  },
+  "note": "extra round beyond the 3-round cap, authorised by the human"
+}

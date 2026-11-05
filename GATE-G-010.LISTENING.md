@@ -44,3 +44,7 @@ Prerequisites PR-001/PR-002 remain open, so this is diagnostic. See `listening/G
 ## Round 4 outcome (2026-11-05, extra round)
 
 11/12 correct, one-sided p = 0.0032. Listener: "These were very difficult to distinguish." Round 3 (D-001z only) scored 7/12; round 4 adds D-001aa. Awaiting decision.
+
+## Round 5 outcome (2026-11-05, extra round)
+
+8/12 correct, one-sided p = 0.1938: passes the numeric rule (at most 8/12), exactly at the limit, not significantly different from chance. No qualitative notes given. Open: PR-001/PR-002; references partial; no references for Chainsaw/Frost. Awaiting `proceed`, `iterate`, `proceed-with-rescope` or `stop`.
