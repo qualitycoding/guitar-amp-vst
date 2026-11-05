@@ -37,3 +37,15 @@ Bias values were swept over static 0 to 0.8 and dynamic 0 to 2.0. Larger values 
 ## What this does not fix
 
 The 4-16 kHz band is still about 8 dB under the references on average, and 15-35 dB under for the low-drive presets in the earlier measurement. The research does not offer a cheap lever for it: it points to real stage-by-stage gain structure (several stages each clipping a differently filtered signal), which would be a larger redesign of the preamp topology than one round can validate.
+
+## Addendum 2026-11-05: what the listener actually heard
+
+Listener, after round 4: the first pair was "a lot brighter" than the other clip; in general brightness was the cue.
+
+Measured on the 1 s onset windows that were played (spectral centroid and share of energy above 2 kHz, reference vs candidate, rounds 1, 3 and 4):
+
+- In round 4 the reference was brighter than the candidate in 9 of 12 pairs; round 3: 7 of 12; round 1: 8 of 12. Pair 01 of round 4 (Crunch Rhythm): centroid 1124 Hz vs 414 Hz, energy above 2 kHz 11.5 dB lower in the candidate.
+- The low-drive presets (Southern Rock, Classic Rock Crunch, Crunch Rhythm, 80s Hair Metal, Funeral March) differ by 10-17 dB above 2 kHz in the onset window, more than the 12 s average gap (-8 dB) suggested.
+- The envelope-bias change (D-001aa) did not change brightness, so the 7/12 vs 11/12 difference between rounds 3 and 4 is probably pair selection plus sampling noise, not D-001aa. My earlier statement that D-001aa was the likely cause was not supported.
+
+Candidate mechanism from the same review (Fernandez-Cid & Quiros 2001, multiband waveshaper): split the band, shape the high band with its own gain, sum. Not yet implemented.
