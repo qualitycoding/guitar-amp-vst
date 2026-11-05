@@ -3,7 +3,7 @@ id: K-20261105T162900Z-amp-reference-material-sources
 statement: "As of 2026-11-05, no CC BY or CC0 real recording with a paired DI exists online for a Boss HM-2, a black-metal rig, a 5E3 Tweed Deluxe, a Mesa Dual Rectifier or a high-gain 5150/6505. Real recordings of Mark V, Engl, Mesa 550 and 6505 amps exist but carry no licence or a non-commercial one. TONE3000 has T3K-licensed NAM captures of all of these. The T3K licence lets rendered output be published but forbids redistributing the capture. For a non-commercial project, CC BY-NC and CC BY-NC-ND material may be used locally; unlicensed material may not be used at all."
 status: current
 supersedes: []
-tags: [subject:amp-reference-datasets, subject:dataset-licensing, tech:nam, tech:zenodo, domain:audio, domain:guitar-amp-modelling, phase:research]
+tags: [subject:amp-reference-datasets, subject:guitar-amp-simulation, domain:audio, tech:nam, tech:zenodo, phase:research]
 applies_to_version: "site contents and licences as read 2026-11-05"
 source: {"url": "https://github.com/qualitycoding/guitar-amp-vst/blob/g010/research/G-010-reference-gap-research.md", "doi": "", "title": "G-010 research round: reference material for the uncovered voicings", "locator": "Sites listed in the body; each was read directly (Zenodo REST API, GitHub REST API, tone pages, PDFs)", "accessed": "2026-11-05", "tier": 1}
 confidence: verified
