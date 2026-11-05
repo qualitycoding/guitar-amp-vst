@@ -62,3 +62,7 @@ Human response: `proceed-with-rescope` (recommended option accepted).
 ### Update 2026-11-05 (after the rescope)
 
 New reference research (`research/G-010-reference-gap-research.md`) was merged. Under D-001ac the CC BY-NC references (Blues Jr, Mark V) may be used locally, so Tweed, Recto and Doom are testable later; they remain untested today and inside the rescope. Capture-derived references (TONE3000 T3K) would form a separate tier. No new listening round was run.
+
+## Round 6 outcome (2026-11-05, extra round, CC BY-NC tier)
+
+Five pairs for Tweed, Recto and Doom against the Blues Jr and Mark V recordings, scored on their own. Listener: "They are indistinguishable"; forced guesses A for all five gave 2/5 correct (p = 0.8125), which is chance. Five pairs cannot establish more than that. The rescope is unchanged: Tweed, Recto and Doom now have a diagnostic result that shows no audible difference at the amp-output level on 1 s onsets, but the references are partial matches and the set is too small to claim realism for them.
