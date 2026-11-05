@@ -40,3 +40,7 @@ Prerequisites PR-001/PR-002 remain open, so this is diagnostic. See `listening/G
 ## Round 3 outcome (2026-11-04)
 
 7/12 correct, one-sided p = 0.3872: passes the numeric rule (at most 8/12) and is statistically indistinguishable from chance. No adverse qualitative finding was given. Open: PR-001/PR-002 (S-015 Live evidence, review/host prerequisites); references were partial/weak matches and cover 14 of 24 presets (none for Chainsaw/Frost). Awaiting `proceed`, `iterate`, `proceed-with-rescope` or `stop`.
+
+## Round 4 outcome (2026-11-05, extra round)
+
+11/12 correct, one-sided p = 0.0032. Listener: "These were very difficult to distinguish." Round 3 (D-001z only) scored 7/12; round 4 adds D-001aa. Awaiting decision.
