@@ -25,3 +25,7 @@ validation/*.png
 .checkpoints/snapshots/
 
 # Local listening work and CC BY-NC reference excerpts (never commit; see references/README.md)
+
+# D-001ac: material derived from CC BY-NC references is local only and never committed
+listening-work/references-nc/
+listening-work/G-010/round-006/

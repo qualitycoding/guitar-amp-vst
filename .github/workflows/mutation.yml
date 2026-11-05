@@ -66,8 +66,11 @@ jobs:
       - name: Install Mull + clang 19
         if: steps.scope.outputs.mode != 'not-applicable'
         run: |
-          curl -1sLf 'https://dl.cloudsmith.io/public/mull-project/mull-stable/setup.deb.sh' | sudo -E bash
-          sudo apt-get install -y mull-19 clang-19 lld-19 libasound2-dev libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libxext-dev libfreetype-dev libfontconfig1-dev libgl1-mesa-dev
+          # The Cloudsmith apt repository answered 402 Payment Required on 2026-11-05 (D-001ag), so the same Mull 0.34 line
+          # is installed from its GitHub release package, which is built against LLVM 19.1.1 (Ubuntu 24.04's clang-19).
+          curl -fsSL --retry 4 -o mull.deb 'https://github.com/mull-project/mull/releases/download/0.34.2/Mull-19-0.34.2-LLVM-19.1.1-ubuntu-amd64-24.04.deb'
+          sudo apt-get update
+          sudo apt-get install -y ./mull.deb clang-19 lld-19 libasound2-dev libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libxext-dev libfreetype-dev libfontconfig1-dev libgl1-mesa-dev
 
       - name: Build test suite with Mull instrumentation (-O0)
         if: steps.scope.outputs.mode != 'not-applicable'

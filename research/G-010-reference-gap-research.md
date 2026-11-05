@@ -266,3 +266,7 @@ window, checksum) and our own measurements may always be committed.
 3. Send the three requests in §E.
 4. Re-amping our own DIs through a real HM-2 and a chosen Frost rig (README, "Gaps and how to close them") is still the
    only route found to *recordings* for Chainsaw and Frost.
+
+## Update 2026-11-05: round 6 inputs (Tweed, Recto, Doom)
+
+The five CC BY-NC references (Blues Jr: presets 1 and 22; Mark V Extreme: presets 7, 8 and 15) were fetched into the ignored `listening-work/references-nc/` under D-001ac. Neither ToneTwist record says how the output was captured (mic or load box), and the Schmitz and Embrechts pages did not either. Inferred from the spectra of the 12 s excerpts, share of energy 8-16 kHz relative to the total: Mark V -18 dB (same as the JVM 410H load-box recordings, -19 to -24 dB) so no cabinet: candidates rendered with `ir-mix` 0; Blues Jr -28 dB (preset 1) and -49 dB (preset 22), a steep roll-off like a miked speaker (EG-IPT SM57: -73 to -81 dB): candidates rendered with the preset's own cabinet. These are inferences, not documented facts. Round 6 uses 5 pairs, `--rms-db -26` (one Blues Jr or Mark V clip clips at -23), seed 20266103, and is scored on its own.

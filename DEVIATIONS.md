@@ -358,3 +358,21 @@ After round 4 (11/12) the listener said brightness was the cue. In the 1 s onset
 ### D-001ad - output loudness left as is; consider a limiter later (human decision, 2026-11-05)
 
 The preamp changes (D-001x, D-001z, D-001aa, D-001ab) raised the crest factor to about 10 dB, so at the frozen T-005 peak bound the voicings are about 6.7 dB quieter on music than at round 3 at the same master setting. A trial of master range 0 to 2 with preset master 1.4 clipped every factory preset on the bench DI (peaks 0.64-0.93 at master 0.7 became full scale) and was reverted. Decision: leave the loudness as it is. Consider adding an output limiter or soft clipper later so that make-up gain can be used; it would be a new stage and must be listened to before it ships, because it changes the character the blind rounds scored. Not done.
+
+### D-001af - repository licence is Apache-2.0 (owner decision, 2026-11-05)
+
+The owner confirmed the source is Apache-2.0. `LICENSE` is now the Apache License 2.0 text (it was AGPL-3.0 on this branch) and the README licence section says so. This resolves the open question in `research/G-010-reference-gap-research.md` §F. It does not change what a compiled binary must follow: JUCE 8 modules are AGPL-3.0 or commercial, so a distributed plugin binary falls under one of those; this is stated in the README. `plan/ASSUMPTIONS.md` A-009 (which amended the licence to AGPL-3.0) is superseded by this entry. GPL-3.0 data (research §A3) is still not vendored: whether Apache-2.0 source may carry GPL-3.0 audio data was not decided here.
+
+### D-001ag - Mull installed from the GitHub release package
+
+Every mutation run on PR 24 failed in "Install Mull + clang 19": the Cloudsmith apt repository for `mull-stable` answered `402 Payment Required` (run 42070234136, 2026-11-05), so `mutation-gate` failed without testing anything. `.github/workflows/mutation.yml` now installs the same Mull 0.34 line from its GitHub release (`0.34.2`, `Mull-19-...-LLVM-19.1.1-ubuntu-amd64-24.04.deb`, built against the LLVM 19.1.1 that Ubuntu 24.04's `clang-19` ships). The package layout (`mull-runner-19`, `/usr/lib/mull-ir-frontend-19`) was not verified locally; the next CI run will show. No mutation result exists for D-001x to D-001ae until it passes.
+
+### D-001ae - preamp stage reworked after PR 24 CI failed on T-050 and T-051
+
+CI on PR 24 had failed since the preamp changes: on windows-latest and macos-latest the bench gate reported `T-051 latency High: reported=4 measured=6` and `T-050 Frost/High 23.65 % vs 15 % budget`, 63-69 % over the stored baseline (run 42057575373). Both reproduced locally. Bisecting with switches showed the tanh-based high-band path (D-001ab) caused the latency shift (its small-signal gain moved the impulse peak) and, with the bias path (D-001aa), three transcendental calls per sample per stage caused the CPU. Changes in `Source/DSP/Preamp.h`:
+
+- the high-band path keeps only what exceeds a dead zone of 1.0 (`z = 6 * drive^2 * highpassed input`), soft-limited to +/-1 and added at weight 0.25. No small-signal gain, no transcendental call, bounded (an unbounded dead zone broke the frozen T-005 peak bound);
+- the bias term `shape(b)` is refreshed every 8 samples (the bias follows a 1-50 ms envelope);
+- the shaper's `tanh` is a 7/6 Pade approximation, within 1e-4 of `tanh` for all inputs.
+
+Local results (this machine, relative numbers only): High-mode latency reported 4 / measured 4; High-mode CPU mean 18.1 % against 19.0 % for the pre-D-001x preamp and 36.8 % before this change. 31/31 ctest at the unchanged trims; voicing spread 0.35 dB. Onset-window mean absolute gap above 2 kHz to the references 4.5 dB (round 5 engine: 4.5), crest 10.2 dB, 80-250 Hz gap -1.2 dB. CI results for the Windows and macOS runners are not in yet. The engine differs slightly from the one rounds 5 scored.
