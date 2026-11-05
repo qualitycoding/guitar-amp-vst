@@ -382,3 +382,7 @@ Follow-up to D-001ae (same day): CI run 42083982747 on commit 8d8dbea passed T-0
 ### D-001ah - exception to D-001ac: round-6 listener bundle committed (owner instruction, 2026-11-05)
 
 The owner asked for the round-6 listening files to be pushed to the repository. They are derived from CC BY-NC 4.0 recordings (Blues Jr, Mark V). Only the 1 s listener pairs and their zip are committed, with `listening-work/G-010/round-006/NOTICE.md` carrying the attribution and the non-commercial restriction. The full-length references, the DIs, the candidate renders and the answer key stay local (`.gitignore`). Everything else in D-001ac stands.
+
+### D-001ai - mutation job timeout raised to 355 minutes
+
+With Mull installed again (D-001ag), the full mutation run on 9db05cc (run 42091872467) was cancelled by the 240-minute job limit: 42 minutes to install and build, then more than 198 minutes of mutants with no result. The earlier measurement of about 150 minutes for a full run predates the D-001x to D-001ae additions to `Preamp.h`, which add mutable code to the file that is mutated most. The limit is now 355 minutes, just under the 360-minute maximum of GitHub-hosted runners. If that is not enough, the run needs to be sharded by file (not done). Three redundant mutation runs on later commits were cancelled so only one run is spent.

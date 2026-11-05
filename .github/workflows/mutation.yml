@@ -26,7 +26,7 @@ permissions:
 jobs:
   mutation:
     runs-on: ubuntu-24.04
-    timeout-minutes: 240      # measured: about 150 minutes for the full run (66 minutes before the CR-004/005 tests)
+    timeout-minutes: 355      # 240 was hit on 2026-11-05 (build 42 min, then 198+ min of mutants without finishing, D-001ai); GitHub-hosted maximum is 360
     outputs:
       mode: ${{ steps.scope.outputs.mode }}
     steps:
