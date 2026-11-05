@@ -53,6 +53,27 @@ inline float fastTanh (float x) noexcept
     return juce::jlimit (-1.0f, 1.0f, num / den);
 }
 
+/*  D-001ae: juce::dsp::IIR::Filter::processSample carries per-call overhead that showed up in T-050 at 4x
+    oversampling. Same transposed direct form II, with the coefficients copied from a juce Coefficients object. */
+struct InlineBiquad
+{
+    float b0 = 1.0f, b1 = 0.0f, b2 = 0.0f, a1 = 0.0f, a2 = 0.0f, z1 = 0.0f, z2 = 0.0f;
+
+    void load (const juce::dsp::IIR::Coefficients<float>& c) noexcept
+    {
+        const float* r = c.getRawCoefficients();
+        b0 = r[0]; b1 = r[1]; b2 = r[2]; a1 = r[3]; a2 = r[4];
+    }
+    void reset() noexcept { z1 = z2 = 0.0f; }
+    float process (float in) noexcept
+    {
+        const float out = in * b0 + z1;
+        z1 = in * b1 - out * a1 + z2;
+        z2 = in * b2 - out * a2;
+        return out;
+    }
+};
+
 class PreampStage
 {
 public:
@@ -65,14 +86,15 @@ public:
         tanhBlend         = row.tanhBlend;
         setupBias (sampleRate);
 
-        preEmphasis.coefficients  = juce::dsp::IIR::Coefficients<float>::makeHighShelf (
+        preCoeffs  = juce::dsp::IIR::Coefficients<float>::makeHighShelf (
             sampleRate, preF, 0.7071f, juce::Decibels::decibelsToGain (preG));
-        postEmphasis.coefficients = juce::dsp::IIR::Coefficients<float>::makeHighShelf (
+        postCoeffs = juce::dsp::IIR::Coefficients<float>::makeHighShelf (
             sampleRate, preF, 0.7071f, juce::Decibels::decibelsToGain (-preG * deEmphasisFraction));
 
-        const juce::dsp::ProcessSpec spec { sampleRate, 128, 2 };
-        preEmphasis.prepare (spec);
-        postEmphasis.prepare (spec);
+        preEmphasis.load (*preCoeffs);
+        postEmphasis.load (*postCoeffs);
+        preEmphasis.reset();
+        postEmphasis.reset();
         setDrive (0.5f);
         outGain = juce::Decibels::decibelsToGain (outG);
     }
@@ -88,8 +110,10 @@ public:
         tanhBlend         = row.tanhBlend;
         setupBias (sampleRate);
 
-        biquad::highShelf (*preEmphasis.coefficients,  sampleRate, preF, 0.7071f, juce::Decibels::decibelsToGain (preG));
-        biquad::highShelf (*postEmphasis.coefficients, sampleRate, preF, 0.7071f, juce::Decibels::decibelsToGain (-preG * deEmphasisFraction));
+        biquad::highShelf (*preCoeffs,  sampleRate, preF, 0.7071f, juce::Decibels::decibelsToGain (preG));
+        biquad::highShelf (*postCoeffs, sampleRate, preF, 0.7071f, juce::Decibels::decibelsToGain (-preG * deEmphasisFraction));
+        preEmphasis.load (*preCoeffs);
+        postEmphasis.load (*postCoeffs);
         preEmphasis.reset();
         postEmphasis.reset();
         setDrive (0.5f);
@@ -119,7 +143,7 @@ public:
             const float z = highBandGain * drive * drive * (x - hiLp);
             const float over = z - juce::jlimit (-highBandDeadZone, highBandDeadZone, z);
             const float hiOut = over / (1.0f + std::abs (over));      // bounded, so loud passages cannot run away
-            x = preEmphasis.processSample (x);
+            x = preEmphasis.process (x);
             x *= drive;
             {
                 const float a = std::abs (x);
@@ -136,7 +160,7 @@ public:
             }
             x += highBandMix * hiOut;
             x *= outGain;
-            x = postEmphasis.processSample (x);
+            x = postEmphasis.process (x);
             data[i] = x;
         }
     }
@@ -144,13 +168,13 @@ public:
 private:
     float shape (float x) const noexcept
     {
-        // cubic branch: x - x^3/3 inside [-1, 1], clamped to +/-2/3 outside
-        float cubic = x;
-        if (x > 1.0f)       cubic =  2.0f / 3.0f;
-        else if (x < -1.0f) cubic = -2.0f / 3.0f;
-        else                cubic = x - (x * x * x) / 3.0f;
-
         const float th = fastTanh (x);
+        if (tanhBlend >= 0.999f)
+            return th;                                    // Frost: no cubic term to compute
+
+        // cubic branch: x - x^3/3 inside [-1, 1], held at +/-2/3 outside (branch-free)
+        const float xc = juce::jlimit (-1.0f, 1.0f, x);
+        const float cubic = xc - (xc * xc * xc) / 3.0f;
         return (1.0f - tanhBlend) * cubic + tanhBlend * th;
     }
 
@@ -168,7 +192,8 @@ private:
     float env = 0.0f, dcLp = 0.0f, envAtk = 0.0f, envRel = 0.0f, dcA = 0.0f;
     float hiA = 0.0f, hiLp = 0.0f;
     float driveBase = 1.0f, drive = 1.0f, outGain = 1.0f, tanhBlend = 0.5f;
-    juce::dsp::IIR::Filter<float> preEmphasis, postEmphasis;
+    juce::dsp::IIR::Coefficients<float>::Ptr preCoeffs, postCoeffs;
+    InlineBiquad preEmphasis, postEmphasis;
 };
 
 class Preamp
