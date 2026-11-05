@@ -134,6 +134,13 @@ before listening.
 
 ## Gaps and how to close them
 
+A search for more material (2026-11-05) is written up in
+[`../research/G-010-reference-gap-research.md`](../research/G-010-reference-gap-research.md). It found no new CC BY
+or CC0 real recording with a paired DI. It did find these: a weak in-repo Frost proxy (JVM `B5_M0_T5_G5` and `G10`);
+TONE3000 captures of a real HM-2, Dual Rectifier, 6505 and 5E3 under the T3K licence, which allows rendered output to
+be published; and the unlicensed upstreams of the Mark V data and of a real 6505 LEAD recording, which their authors
+could relicense.
+
 - **Chainsaw (HM-2), presets 11 and 12.** No real Boss HM-2 recording with a paired DI was found under an open or
   research licence. Neural captures of HM-2s exist, but they are models rather than recordings, and their usual
   licences forbid redistribution.
