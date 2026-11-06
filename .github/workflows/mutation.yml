@@ -113,13 +113,27 @@ jobs:
 
       # Mull 0.34.x line: package, plugin path and clang major must agree (K-20261027T123200Z)
       - name: Install Mull + clang 19
-        timeout-minutes: 20      # two shards hung here for 17+ minutes on 2026-11-06 (the others take 20 seconds): bound it, then rerun the job
+        timeout-minutes: 25      # the install hung in 6 of 22 shard starts on 2026-11-06 and succeeds in 20 seconds otherwise; each attempt is bounded and retried
+        shell: bash
         run: |
+          set -o pipefail
+          cat > install.sh <<'SH'
+          set -e
           # The Cloudsmith apt repository answered 402 Payment Required on 2026-11-05 (D-001ag), so the same Mull 0.34 line
           # is installed from its GitHub release package, which is built against LLVM 19.1.1 (Ubuntu 24.04's clang-19).
           curl -fsSL --retry 4 --connect-timeout 20 --max-time 300 -o mull.deb 'https://github.com/mull-project/mull/releases/download/0.34.2/Mull-19-0.34.2-LLVM-19.1.1-ubuntu-amd64-24.04.deb'
           sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 update
           sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 install -y ./mull.deb clang-19 lld-19 libasound2-dev libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libxext-dev libfreetype-dev libfontconfig1-dev libgl1-mesa-dev
+          SH
+          installed=no
+          for attempt in 1 2 3; do
+            if timeout 420 bash install.sh; then installed=yes; break; fi
+            echo "install attempt $attempt failed or timed out"
+            if sudo pkill -f apt-get; then echo 'stopped a stuck apt-get'; fi
+            if sudo pkill -f dpkg; then echo 'stopped a stuck dpkg'; fi
+            sleep 5
+          done
+          [ "$installed" = yes ]
 
       - name: Build test suite with Mull instrumentation (-O0)
         run: |
