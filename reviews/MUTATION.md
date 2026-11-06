@@ -81,3 +81,19 @@ rows = sqlite3.connect('mull.sqlite').execute('select execution_status from muta
 print(sum(1 for (s,) in rows if s != 2), '/', len(rows))   # status 2 = survived
 PY
 ```
+
+## 2026-11-06 - first runs after the D-001x to D-001ae preamp changes: no score
+
+| Run | Commit | Result |
+|---|---|---|
+| 42091872467 | 9db05cc | Mull installed and built (42 min), mutants ran 198+ minutes, cancelled by the 240-minute job limit |
+| 42128245981 | 377684e | Mull installed and built (3 min), mutants ran 3 h 40 min (23:19 to 02:59 UTC), then **"The hosted runner lost communication with the server"**; the job log and the report upload were lost |
+
+There is no T-070 score for the current `Source/DSP/Preamp.h` and no per-file breakdown. The last recorded score (77.9 %, run 40898109414) predates the changes and does not describe the current code.
+
+Cause of the second failure is not proven. The runner loss is the signature of memory or CPU starvation, and the mutated file gained per-sample state and loops (D-001aa, D-001ab, D-001ae) with four mutant workers on a 4-vCPU runner. A mutant that runs away or allocates without limit would explain it. The first run's long duration points the same way.
+
+Proposed next step (not done):
+1. Shard by file: one job per mutated file (`Preamp.h`, `PowerAmp.h`, `ToneStack.h`, `CabIR.h`, `NoiseGate.h`, `Boost.h`, `PostEq.h`, `UserIRLoader.cpp`, `Presets/`), each with `mull_include_paths.py` limited to its file, a 120-minute timeout and `--workers 3`.
+2. Cap every test process (`ulimit -v` about 2 GB, `ulimit -t` about 120 s) so a runaway mutant dies alone.
+3. Upload `mull.sqlite` and `mull.log` with `if: always()` so a lost runner still leaves partial results, and combine the shard scores with `tools/ci/mull_score.py`.

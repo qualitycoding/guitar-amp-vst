@@ -70,3 +70,4 @@ later folded into the next checkpoint commit).
 | 2026-11-05 | CI | run 42083982747 | partial | 8d8dbea | T-051 passes, macOS green, Mull install works; windows Frost/High 15.34 % vs 15.0 % budget. Inline biquad + Frost shortcut: local CPU -12 %, output unchanged. |
 | 2026-11-05 | G-010 | round 6 (extra, NC tier) | scored 2/5 (p=0.8125) diagnostic | see git log | Tweed/Recto/Doom vs Blues Jr/Mark V; listener: indistinguishable, forced guess all A. Rescope unchanged. |
 | 2026-11-05 | T-070 | run 42091872467 | cancelled at 240 min, no score | see git log | Mull install fixed (D-001ag); full run needs more than 198 min of mutants. Timeout raised to 355 (D-001ai); redundant runs cancelled. |
+| 2026-11-06 | T-070 | run 42128245981 | no score (hosted runner lost communication after 3h40m) | see git log | Not a timeout. No log or report survived. Sharding by file, ulimit caps and upload-always proposed in reviews/MUTATION.md (D-001aj). No new run started. |
