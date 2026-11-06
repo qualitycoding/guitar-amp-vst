@@ -97,3 +97,38 @@ Proposed next step (not done):
 1. Shard by file: one job per mutated file (`Preamp.h`, `PowerAmp.h`, `ToneStack.h`, `CabIR.h`, `NoiseGate.h`, `Boost.h`, `PostEq.h`, `UserIRLoader.cpp`, `Presets/`), each with `mull_include_paths.py` limited to its file, a 120-minute timeout and `--workers 3`.
 2. Cap every test process (`ulimit -v` about 2 GB, `ulimit -t` about 120 s) so a runaway mutant dies alone.
 3. Upload `mull.sqlite` and `mull.log` with `if: always()` so a lost runner still leaves partial results, and combine the shard scores with `tools/ci/mull_score.py`.
+
+## 2026-11-06 - sharded full run on bd50813 (run 42196121659): gate passes, Preamp.h is below its baseline
+
+Eleven shards, one per mutated file (D-001ak); all succeeded and `mutation-gate` passed.
+
+```
+Source/DSP/OversampledStage.h        1/2     50.0%
+Source/DSP/Preamp.h                 28/50    56.0%
+Source/DSP/CabIR.h                  24/40    60.0%
+Source/DSP/UserIRLoader.cpp         16/26    61.5%
+Source/Presets/PresetManager.cpp    11/14    78.6%
+Source/DSP/NoiseGate.h              29/36    80.6%
+Source/DSP/PowerAmp.h               26/30    86.7%
+Source/DSP/Boost.h                   8/9     88.9%
+Source/DSP/BiquadDesign.h           57/58    98.3%
+Source/DSP/PostEq.h                  2/2    100.0%
+Source/DSP/ToneStack.h               4/4    100.0%
+Mutation score: 76.0% (206/271 killed); floor 75%
+```
+
+Project score 76.0 % (206 of 271 mutants killed), floor 75 %, 11 percentage points of files below their baseline only in `Preamp.h`: 56.0 % (28/50) against a recorded 81.2 %. All other files are within the 5-point tolerance of `reviews/mutation-baseline.json` (CabIR.h 60.0 against 62.5, PowerAmp.h 86.7 against 90.0). The project gate passes only because the other files carry the total; an incremental run that touches `Preamp.h` would fail its per-file gate (required 76.2 %). The baseline file was not changed.
+
+### Preamp.h survivors (22 of 50), all in code added by D-001x to D-001ae
+
+| Lines | Code | Survivors | Class |
+|---|---|---|---|
+| 51, 53 | `fastTanh` polynomial and division | 2 | the approximation is only checked loosely; a wrong coefficient changes it by less than the tests' tolerances |
+| 143, 144 | high-band path: `z = gain * drive^2 * (x - hiLp)`, dead-zone subtraction | 4 | no test drives the stage hard enough for the high-band path to matter |
+| 150, 152, 159 | bias envelope comparison, the 8-sample refresh counter, the DC-block subtraction | 5 | envelope direction, refresh cadence and the DC block are not asserted |
+| 172, 178 | `tanhBlend >= 0.999` shortcut and the blend `1 - tanhBlend` | 3 | the Frost shortcut and the cubic blend are not compared with a reference |
+| 183, 184, 188 | `exp(-1/(tau*sr))` and the high-band corner coefficient | 8 | time constants and the 1.2 kHz corner are not measured |
+
+By mutator: sub to add 7, div to mul 4, mul to div 4, add to sub 1, and one each of gt to le, gt to ge, post-inc to post-dec, eq to ne, ge to gt, ge to lt.
+
+Unlike the survivors recorded earlier (loop bounds, hysteresis edges), these are not equivalent mutants: each changes the sound or the cost, and a reference test would kill them. Proposed tests, none written yet: (1) `fastTanh` against `std::tanh` on a grid (bound 1e-4); (2) a stage test with a high-level 3 kHz tone checking that the high-band term raises the 3 kHz level and that a 100 Hz tone gets almost none; (3) an envelope test: a burst then silence, checking attack (1 ms) and release (50 ms) times and that the output has no DC after the DC block; (4) Frost (blend 1.0) against the shaper with an explicit cubic of zero, and a blend of 0.5 against the formula; (5) a frequency-response check of the high-band split at 1.2 kHz.
