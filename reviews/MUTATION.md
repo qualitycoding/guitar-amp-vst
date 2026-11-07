@@ -144,3 +144,33 @@ Survivors expected to stay, equivalent mutants:
 - `a > env` to `a >= env` (the attack/release choice): the two branches differ only when `a == env`, where `a - env` is zero.
 - `biasTick++` to `biasTick--`: the refresh still happens every eighth sample, starting with the first, so the output is identical.
 - `tanhBlend >= 0.999f` to `> 0.999f`: no voicing has a blend of exactly 0.999.
+
+## 2026-11-07 - sharded full run on 6a20f02 (run 42317849477): Preamp.h 92.0 %, project 82.7 %
+
+```
+Source/DSP/OversampledStage.h        1/2     50.0%
+Source/DSP/CabIR.h                  24/40    60.0%
+Source/DSP/UserIRLoader.cpp         16/26    61.5%
+Source/Presets/PresetManager.cpp    11/14    78.6%
+Source/DSP/NoiseGate.h              29/36    80.6%
+Source/DSP/PowerAmp.h               26/30    86.7%
+Source/DSP/Boost.h                   8/9     88.9%
+Source/DSP/Preamp.h                 46/50    92.0%
+Source/DSP/BiquadDesign.h           57/58    98.3%
+Source/DSP/PostEq.h                  2/2    100.0%
+Source/DSP/ToneStack.h               4/4    100.0%
+Mutation score: 82.7% (224/271 killed); floor 75%
+```
+
+The gate passed. The CabIR.h shard first failed in the Mull install (all three bounded attempts hung, so the step failed) and passed on `gh run rerun --failed`; its score, 24/40, is unchanged. Scored against `reviews/mutation-baseline.json` with a 5-point tolerance, every file is at or above its baseline. `Preamp.h` went from 56.0 % (28/50) in run 42196121659 to **92.0 % (46/50)**, above its recorded 81.2 %. The baseline file was not changed.
+
+### Remaining Preamp.h survivors (4 of 50), justified
+
+| Line | Mutant | Why it stays |
+|---|---|---|
+| 139 | `i < numSamples` to `i <= numSamples` | loop-bound mutant: it reads and writes one element past the block. It cannot be observed through the output without undefined behaviour; the ASan/UBSan job and the 168-case sine and oversize-block tests cover this class (same justification as the loop-bound survivors recorded for the other stages). |
+| 150 | `a > env` to `a >= env` | equivalent: the two branches differ only when `a == env`, where `a - env` is zero. |
+| 152 | `biasTick++` to `biasTick--` | equivalent: the refresh still happens every eighth sample starting with the first. |
+| 172 | `tanhBlend >= 0.999f` to `> 0.999f` | equivalent for the shipped data: no voicing has a blend of exactly 0.999. |
+
+S-MUTATE can close: T-070 is met (project 82.7 % against the 75 % floor, every file within its baseline) and every survivor in the file that changed is justified in writing.
