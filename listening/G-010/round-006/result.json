@@ -1,0 +1,131 @@
+{
+  "schema_version": 1,
+  "repository": "qualitycoding/guitar-amp-vst",
+  "branch": "impl-run-20261027T120000Z-guitar-amp-vst",
+  "candidate_commit": "9db05cc",
+  "gate_id": "G-010",
+  "round": 6,
+  "test_type": "realism (CC BY-NC local tier: Tweed, Recto, Doom)",
+  "status": "scored-diagnostic",
+  "prerequisites": [
+    {
+      "id": "PR-001",
+      "status": "blocked",
+      "evidence": "S-015 Live record/render evidence is incomplete."
+    },
+    {
+      "id": "PR-002",
+      "status": "blocked",
+      "evidence": "Unresolved review/host prerequisites must finish first."
+    },
+    {
+      "id": "PR-003",
+      "status": "partial",
+      "evidence": "Real-amp references with paired DIs: 14 presets in references/audio (CC BY 4.0: Marshall JVM 410H, EVH 5150 III/EG-IPT), 5 local-only (CC BY-NC 4.0: Fender Blues Jr, Mesa Mark V), 5 with none (Chainsaw p11-p12, Frost p13-p14/p24). See references/README.md and references/manifest.json."
+    }
+  ],
+  "frozen_metrics": [],
+  "reference": {
+    "kind": "real-amp recordings with simultaneous DI (partial coverage)",
+    "source_ids": [
+      "10.5281/zenodo.7970723",
+      "10.5281/zenodo.15205644",
+      "10.5281/zenodo.10797977",
+      "10.5281/zenodo.10796864"
+    ],
+    "licence_or_consent": "CC BY 4.0 (vendored); CC BY-NC 4.0 (local-only, not committed)",
+    "redistribution": "CC BY 4.0 excerpts committed under references/audio with ATTRIBUTION.md; CC BY-NC excerpts private-local-only",
+    "checksums": "references/manifest.json (pcm_sha256 per file)"
+  },
+  "candidate_renders": {
+    "manifest": "listening-work/G-010/round-001/cand (14 files, rendered by scripts/render_candidates.py from references/manifest.json overrides)",
+    "checksums": ""
+  },
+  "pair_builder": {
+    "script": "scripts/make_blind_pairs.py",
+    "commit": "9db05cc",
+    "seed": 20266103,
+    "pairs": 5,
+    "window": "start",
+    "seconds": 1.0,
+    "rms_db": -26.0,
+    "fade_seconds": 0.01,
+    "sample_rate": 44100
+  },
+  "evidence": {
+    "mode": "private-local",
+    "branch": "",
+    "commit": "",
+    "bundle": "",
+    "sha256sums": "",
+    "private_location_id": "guitar-amp-vst-G-010-owner-local"
+  },
+  "answers": {
+    "ordered": "A,A,A,A,A",
+    "submitted_at": "2026-11-05",
+    "same_side_count": 5
+  },
+  "score": {
+    "correct": 2,
+    "total": 5,
+    "one_sided_p": 0.8125,
+    "pass_condition": "correct <= 8 && no unresolved qualitative finding",
+    "verdict": "diagnostic only; chance level"
+  },
+  "qualitative_findings": [
+    {
+      "verbatim": "They are indistinguishable",
+      "note": "Listener could not tell the pairs apart and then gave 'A' for all five as a forced guess. 2/5 is what guessing gives; five pairs cannot show more. Pairs: 01 p01 Blues Jr right, 02 p07 Mark V wrong, 03 p15 Mark V wrong, 04 p22 Blues Jr wrong, 05 p08 Mark V right."
+    }
+  ],
+  "iterations": [
+    {
+      "round": 1,
+      "summary": "9/12"
+    },
+    {
+      "round": 2,
+      "summary": "11/12 (D-001y)"
+    },
+    {
+      "round": 3,
+      "summary": "7/12 (D-001z)"
+    },
+    {
+      "round": 4,
+      "summary": "11/12 (D-001aa envelope-driven stage bias on top of D-001z)"
+    },
+    {
+      "round": 5,
+      "summary": "8/12 (D-001ab high-band shaper)"
+    },
+    {
+      "round": 6,
+      "summary": "2/5 (diagnostic, NC tier; D-001ae engine)"
+    }
+  ],
+  "response": {
+    "value": "proceed-with-rescope (unchanged)",
+    "recorded_at": "2026-11-05",
+    "file": "GATE-G-010.LISTENING.md"
+  },
+  "resume": {
+    "next_step": "S-016",
+    "checkpoint_file": ".checkpoints/state.json",
+    "checkpoint_commit": "",
+    "execution_log_commit": ""
+  },
+  "note": "separate 5-pair diagnostic set, not pooled with the Marshall-family rounds; extra round beyond the cap",
+  "rescope": {
+    "claim": "Realism against real-amp references is claimed only for the presets whose reference is a close or partial match of the same amp family (Marshall-style: the JCM800 and Plexi presets, and loosely the 5150 presets) and on the 1 s onset window at the amp-output level (no cabinet). Chainsaw and Frost presets are untested (no references). Blues/Recto/Doom presets (CC BY-NC references, not used) are untested. 5150 presets are judged only as 'a real high-gain valve amp', not as a 5150.",
+    "evidence": "rounds 1-5: 9,11,7,11,8 of 12; only rounds 3 and 5 pass the numeric rule; no round significantly better than chance.",
+    "open_items": [
+      "PR-001 S-015 Live evidence",
+      "PR-002 review/host prerequisites",
+      "plugin ~6.7 dB quieter than at round 3 at the same master setting (needs master make-up gain or amended T-005 peak bound)",
+      "Mull T-070 not re-run since D-001x..D-001ab",
+      "3-round cap exceeded by two human-authorised rounds"
+    ],
+    "resume": "S-016 once PR-001/PR-002 are met"
+  }
+}

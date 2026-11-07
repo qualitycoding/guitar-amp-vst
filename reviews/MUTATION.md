@@ -81,3 +81,96 @@ rows = sqlite3.connect('mull.sqlite').execute('select execution_status from muta
 print(sum(1 for (s,) in rows if s != 2), '/', len(rows))   # status 2 = survived
 PY
 ```
+
+## 2026-11-06 - first runs after the D-001x to D-001ae preamp changes: no score
+
+| Run | Commit | Result |
+|---|---|---|
+| 42091872467 | 9db05cc | Mull installed and built (42 min), mutants ran 198+ minutes, cancelled by the 240-minute job limit |
+| 42128245981 | 377684e | Mull installed and built (3 min), mutants ran 3 h 40 min (23:19 to 02:59 UTC), then **"The hosted runner lost communication with the server"**; the job log and the report upload were lost |
+
+There is no T-070 score for the current `Source/DSP/Preamp.h` and no per-file breakdown. The last recorded score (77.9 %, run 40898109414) predates the changes and does not describe the current code.
+
+Cause of the second failure is not proven. The runner loss is the signature of memory or CPU starvation, and the mutated file gained per-sample state and loops (D-001aa, D-001ab, D-001ae) with four mutant workers on a 4-vCPU runner. A mutant that runs away or allocates without limit would explain it. The first run's long duration points the same way.
+
+Proposed next step (not done):
+1. Shard by file: one job per mutated file (`Preamp.h`, `PowerAmp.h`, `ToneStack.h`, `CabIR.h`, `NoiseGate.h`, `Boost.h`, `PostEq.h`, `UserIRLoader.cpp`, `Presets/`), each with `mull_include_paths.py` limited to its file, a 120-minute timeout and `--workers 3`.
+2. Cap every test process (`ulimit -v` about 2 GB, `ulimit -t` about 120 s) so a runaway mutant dies alone.
+3. Upload `mull.sqlite` and `mull.log` with `if: always()` so a lost runner still leaves partial results, and combine the shard scores with `tools/ci/mull_score.py`.
+
+## 2026-11-06 - sharded full run on bd50813 (run 42196121659): gate passes, Preamp.h is below its baseline
+
+Eleven shards, one per mutated file (D-001ak); all succeeded and `mutation-gate` passed.
+
+```
+Source/DSP/OversampledStage.h        1/2     50.0%
+Source/DSP/Preamp.h                 28/50    56.0%
+Source/DSP/CabIR.h                  24/40    60.0%
+Source/DSP/UserIRLoader.cpp         16/26    61.5%
+Source/Presets/PresetManager.cpp    11/14    78.6%
+Source/DSP/NoiseGate.h              29/36    80.6%
+Source/DSP/PowerAmp.h               26/30    86.7%
+Source/DSP/Boost.h                   8/9     88.9%
+Source/DSP/BiquadDesign.h           57/58    98.3%
+Source/DSP/PostEq.h                  2/2    100.0%
+Source/DSP/ToneStack.h               4/4    100.0%
+Mutation score: 76.0% (206/271 killed); floor 75%
+```
+
+Project score 76.0 % (206 of 271 mutants killed), floor 75 %, 11 percentage points of files below their baseline only in `Preamp.h`: 56.0 % (28/50) against a recorded 81.2 %. All other files are within the 5-point tolerance of `reviews/mutation-baseline.json` (CabIR.h 60.0 against 62.5, PowerAmp.h 86.7 against 90.0). The project gate passes only because the other files carry the total; an incremental run that touches `Preamp.h` would fail its per-file gate (required 76.2 %). The baseline file was not changed.
+
+### Preamp.h survivors (22 of 50), all in code added by D-001x to D-001ae
+
+| Lines | Code | Survivors | Class |
+|---|---|---|---|
+| 51, 53 | `fastTanh` polynomial and division | 2 | the approximation is only checked loosely; a wrong coefficient changes it by less than the tests' tolerances |
+| 143, 144 | high-band path: `z = gain * drive^2 * (x - hiLp)`, dead-zone subtraction | 4 | no test drives the stage hard enough for the high-band path to matter |
+| 150, 152, 159 | bias envelope comparison, the 8-sample refresh counter, the DC-block subtraction | 5 | envelope direction, refresh cadence and the DC block are not asserted |
+| 172, 178 | `tanhBlend >= 0.999` shortcut and the blend `1 - tanhBlend` | 3 | the Frost shortcut and the cubic blend are not compared with a reference |
+| 183, 184, 188 | `exp(-1/(tau*sr))` and the high-band corner coefficient | 8 | time constants and the 1.2 kHz corner are not measured |
+
+By mutator: sub to add 7, div to mul 4, mul to div 4, add to sub 1, and one each of gt to le, gt to ge, post-inc to post-dec, eq to ne, ge to gt, ge to lt.
+
+Unlike the survivors recorded earlier (loop bounds, hysteresis edges), these are not equivalent mutants: each changes the sound or the cost, and a reference test would kill them. Proposed tests, none written yet: (1) `fastTanh` against `std::tanh` on a grid (bound 1e-4); (2) a stage test with a high-level 3 kHz tone checking that the high-band term raises the 3 kHz level and that a 100 Hz tone gets almost none; (3) an envelope test: a burst then silence, checking attack (1 ms) and release (50 ms) times and that the output has no DC after the DC block; (4) Frost (blend 1.0) against the shaper with an explicit cubic of zero, and a blend of 0.5 against the formula; (5) a frequency-response check of the high-band split at 1.2 kHz.
+
+## 2026-11-07 - new test `preamp_reference` (ctest 32/32) and local mutant check
+
+`tests/MutationTests.cpp` gains `preamp_reference`, registered in `tests/CMakeLists.txt` and added to the Mull test list in the workflow. It restates the stage independently (bias, high band, emphasis shelves, DC block, time constants, all constants written out as literals) and compares a loud two-tone burst followed by silence, for three voicings, both stages and two drive settings, within 1e-3; it also checks that the test signal makes the high band and the dynamic bias matter, that no DC is left, that silence stays silent and that `fastTanh` is within 1e-4 of `tanh`. The stage matched its documented chain on the first run.
+
+Twelve of the 22 survivors were re-created by hand and every one is now killed (`fastTanh` coefficient and division; envelope attack and release formulas; the high-band corner; the DC block; the 8-sample refresh condition; the blend term; the attack/release comparison; the high-band gain and dead-zone arithmetic; the Frost shortcut). The Mull result for the remaining ones comes from the next sharded run.
+
+Survivors expected to stay, equivalent mutants:
+
+- `a > env` to `a >= env` (the attack/release choice): the two branches differ only when `a == env`, where `a - env` is zero.
+- `biasTick++` to `biasTick--`: the refresh still happens every eighth sample, starting with the first, so the output is identical.
+- `tanhBlend >= 0.999f` to `> 0.999f`: no voicing has a blend of exactly 0.999.
+
+## 2026-11-07 - sharded full run on 6a20f02 (run 42317849477): Preamp.h 92.0 %, project 82.7 %
+
+```
+Source/DSP/OversampledStage.h        1/2     50.0%
+Source/DSP/CabIR.h                  24/40    60.0%
+Source/DSP/UserIRLoader.cpp         16/26    61.5%
+Source/Presets/PresetManager.cpp    11/14    78.6%
+Source/DSP/NoiseGate.h              29/36    80.6%
+Source/DSP/PowerAmp.h               26/30    86.7%
+Source/DSP/Boost.h                   8/9     88.9%
+Source/DSP/Preamp.h                 46/50    92.0%
+Source/DSP/BiquadDesign.h           57/58    98.3%
+Source/DSP/PostEq.h                  2/2    100.0%
+Source/DSP/ToneStack.h               4/4    100.0%
+Mutation score: 82.7% (224/271 killed); floor 75%
+```
+
+The gate passed. The CabIR.h shard first failed in the Mull install (all three bounded attempts hung, so the step failed) and passed on `gh run rerun --failed`; its score, 24/40, is unchanged. Scored against `reviews/mutation-baseline.json` with a 5-point tolerance, every file is at or above its baseline. `Preamp.h` went from 56.0 % (28/50) in run 42196121659 to **92.0 % (46/50)**, above its recorded 81.2 %. The baseline file was not changed.
+
+### Remaining Preamp.h survivors (4 of 50), justified
+
+| Line | Mutant | Why it stays |
+|---|---|---|
+| 139 | `i < numSamples` to `i <= numSamples` | loop-bound mutant: it reads and writes one element past the block. It cannot be observed through the output without undefined behaviour; the ASan/UBSan job and the 168-case sine and oversize-block tests cover this class (same justification as the loop-bound survivors recorded for the other stages). |
+| 150 | `a > env` to `a >= env` | equivalent: the two branches differ only when `a == env`, where `a - env` is zero. |
+| 152 | `biasTick++` to `biasTick--` | equivalent: the refresh still happens every eighth sample starting with the first. |
+| 172 | `tanhBlend >= 0.999f` to `> 0.999f` | equivalent for the shipped data: no voicing has a blend of exactly 0.999. |
+
+S-MUTATE can close: T-070 is met (project 82.7 % against the 75 % floor, every file within its baseline) and every survivor in the file that changed is justified in writing.

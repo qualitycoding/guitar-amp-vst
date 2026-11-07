@@ -13,6 +13,67 @@
 
 namespace gramp
 {
+/*  G-010 round 1 (D-001x): the post-shaper shelf undoes only this fraction of the pre-emphasis boost.
+    A full undo (1.0) also cut the harmonics the shaper had just made above the shelf corner by the whole
+    pre-emphasis gain, which left the 2-8 kHz band 10-25 dB under real-amp references. */
+inline constexpr float deEmphasisFraction = 0.5f;
+
+/*  G-010 research round (D-001aa): real preamp stages are not memoryless and not symmetric. Grid current and
+    the cathode bypass capacitor shift each stage's operating point with the signal envelope, so clipping is
+    asymmetric (even harmonics) and the shift relaxes between notes (Pakarinen & Yeh 2009; Karjalainen et al.
+    2006; Kuroki & Ito 1998). Each stage biases its shaper by a fixed part plus an envelope-driven part, and a
+    15 Hz coupling high-pass removes the resulting DC. Measured against the real-amp references this restores
+    the crest factor (6.9 to 10.4 dB; references 11.1) and the 80-250 Hz weight. Constants are pooled, not per clip. */
+inline constexpr float stageBiasStatic = 0.4f;
+inline constexpr float stageBiasDynamic = 0.5f;
+inline constexpr float stageEnvAttackSec = 0.001f;
+inline constexpr float stageEnvReleaseSec = 0.05f;
+inline constexpr float stageCouplingHz = 15.0f;
+
+/*  G-010 round 5 (D-001ab): after round 4 the listener named brightness as the cue; in the played 1 s onset
+    windows the real amp had 10-17 dB more energy above 2 kHz than the candidate for the low-drive presets.
+    Multiband shaping (Fernandez-Cid & Quiros 2001, in Pakarinen & Yeh 2009): the part of each stage's input
+    above the crossover is scaled by the stage drive squared and only what exceeds a dead zone is added back,
+    soft-limited to +/-1 (D-001ae). The dead zone has no small-signal gain, so clean passages stay clean, the first tanh-based version's
+    +2 sample shift of the T-051 High-mode latency measurement is gone, and it costs no transcendental call.
+    Pooled constants over the 14 references. */
+inline constexpr float highBandCornerHz = 1200.0f;
+inline constexpr float highBandGain = 6.0f;
+inline constexpr float highBandDeadZone = 1.0f;
+inline constexpr float highBandMix = 0.25f;
+
+/*  D-001ae: std::tanh dominated the per-sample cost of the stage (T-050). This 7/6 Pade approximation is within
+    about 1e-5 of tanh for |x| < 4.97 and clamps to +/-1 beyond, so the shaper's sound is unchanged. */
+inline float fastTanh (float x) noexcept
+{
+    const float ax = juce::jlimit (-4.97f, 4.97f, x);
+    const float x2 = ax * ax;
+    const float num = ax * (135135.0f + x2 * (17325.0f + x2 * (378.0f + x2)));
+    const float den = 135135.0f + x2 * (62370.0f + x2 * (3150.0f + x2 * 28.0f));
+    return juce::jlimit (-1.0f, 1.0f, num / den);
+}
+
+/*  D-001ae: juce::dsp::IIR::Filter::processSample carries per-call overhead that showed up in T-050 at 4x
+    oversampling. Same transposed direct form II, with the coefficients copied from a juce Coefficients object. */
+struct InlineBiquad
+{
+    float b0 = 1.0f, b1 = 0.0f, b2 = 0.0f, a1 = 0.0f, a2 = 0.0f, z1 = 0.0f, z2 = 0.0f;
+
+    void load (const juce::dsp::IIR::Coefficients<float>& c) noexcept
+    {
+        const float* r = c.getRawCoefficients();
+        b0 = r[0]; b1 = r[1]; b2 = r[2]; a1 = r[3]; a2 = r[4];
+    }
+    void reset() noexcept { z1 = z2 = 0.0f; }
+    float process (float in) noexcept
+    {
+        const float out = in * b0 + z1;
+        z1 = in * b1 - out * a1 + z2;
+        z2 = in * b2 - out * a2;
+        return out;
+    }
+};
+
 class PreampStage
 {
 public:
@@ -23,15 +84,17 @@ public:
         const float outG  = secondStage ? row.s2OutGainDb : row.s1OutGainDb;
         driveBase         = secondStage ? row.s2Drive     : row.s1Drive;
         tanhBlend         = row.tanhBlend;
+        setupBias (sampleRate);
 
-        preEmphasis.coefficients  = juce::dsp::IIR::Coefficients<float>::makeHighShelf (
+        preCoeffs  = juce::dsp::IIR::Coefficients<float>::makeHighShelf (
             sampleRate, preF, 0.7071f, juce::Decibels::decibelsToGain (preG));
-        postEmphasis.coefficients = juce::dsp::IIR::Coefficients<float>::makeHighShelf (
-            sampleRate, preF, 0.7071f, juce::Decibels::decibelsToGain (-preG));
+        postCoeffs = juce::dsp::IIR::Coefficients<float>::makeHighShelf (
+            sampleRate, preF, 0.7071f, juce::Decibels::decibelsToGain (-preG * deEmphasisFraction));
 
-        const juce::dsp::ProcessSpec spec { sampleRate, 128, 2 };
-        preEmphasis.prepare (spec);
-        postEmphasis.prepare (spec);
+        preEmphasis.load (*preCoeffs);
+        postEmphasis.load (*postCoeffs);
+        preEmphasis.reset();
+        postEmphasis.reset();
         setDrive (0.5f);
         outGain = juce::Decibels::decibelsToGain (outG);
     }
@@ -45,9 +108,12 @@ public:
         const float outG  = secondStage ? row.s2OutGainDb : row.s1OutGainDb;
         driveBase         = secondStage ? row.s2Drive     : row.s1Drive;
         tanhBlend         = row.tanhBlend;
+        setupBias (sampleRate);
 
-        biquad::highShelf (*preEmphasis.coefficients,  sampleRate, preF, 0.7071f, juce::Decibels::decibelsToGain (preG));
-        biquad::highShelf (*postEmphasis.coefficients, sampleRate, preF, 0.7071f, juce::Decibels::decibelsToGain (-preG));
+        biquad::highShelf (*preCoeffs,  sampleRate, preF, 0.7071f, juce::Decibels::decibelsToGain (preG));
+        biquad::highShelf (*postCoeffs, sampleRate, preF, 0.7071f, juce::Decibels::decibelsToGain (-preG * deEmphasisFraction));
+        preEmphasis.load (*preCoeffs);
+        postEmphasis.load (*postCoeffs);
         preEmphasis.reset();
         postEmphasis.reset();
         setDrive (0.5f);
@@ -56,13 +122,16 @@ public:
 
     void reset()
     {
+        env = dcLp = hiLp = 0.0f;
         preEmphasis.reset();
         postEmphasis.reset();
     }
 
     void setDrive (float driveKnob) noexcept   // 0..1, smoothed upstream
     {
-        drive = driveBase * (0.25f + 3.75f * juce::jlimit (0.0f, 1.0f, driveKnob));
+        // D-001z: square-root knob law. A linear law left mid-knob settings with too little gain: the low-drive
+        // presets made 15-35 dB less 2-8 kHz energy than real amps (G-010 rounds 1-2). Ends of travel are unchanged.
+        drive = driveBase * (0.25f + 3.75f * std::sqrt (juce::jlimit (0.0f, 1.0f, driveKnob)));
     }
 
     void process (float* const data, int numSamples) noexcept
@@ -70,11 +139,28 @@ public:
         for (int i = 0; i < numSamples; ++i)
         {
             float x = data[i];
-            x = preEmphasis.processSample (x);
+            hiLp += hiA * (x - hiLp);
+            const float z = highBandGain * drive * drive * (x - hiLp);
+            const float over = z - juce::jlimit (-highBandDeadZone, highBandDeadZone, z);
+            const float hiOut = over / (1.0f + std::abs (over));      // bounded, so loud passages cannot run away
+            x = preEmphasis.process (x);
             x *= drive;
-            x = shape (x);
+            {
+                const float a = std::abs (x);
+                env += (a > env ? envAtk : envRel) * (a - env);
+                // the bias follows a 1-50 ms envelope, so b and shape (b) are refreshed every 8 samples
+                if ((biasTick++ & 7) == 0)
+                {
+                    bias = stageBiasStatic + stageBiasDynamic * env;
+                    shapedBias = shape (bias);
+                }
+                const float y = shape (x + bias) - shapedBias;    // zero in, zero out: silence stays silent (T-004)
+                dcLp += dcA * (y - dcLp);
+                x = y - dcLp;
+            }
+            x += highBandMix * hiOut;
             x *= outGain;
-            x = postEmphasis.processSample (x);
+            x = postEmphasis.process (x);
             data[i] = x;
         }
     }
@@ -82,18 +168,32 @@ public:
 private:
     float shape (float x) const noexcept
     {
-        // cubic branch: x - x^3/3 inside [-1, 1], clamped to +/-2/3 outside
-        float cubic = x;
-        if (x > 1.0f)       cubic =  2.0f / 3.0f;
-        else if (x < -1.0f) cubic = -2.0f / 3.0f;
-        else                cubic = x - (x * x * x) / 3.0f;
+        const float th = fastTanh (x);
+        if (tanhBlend >= 0.999f)
+            return th;                                    // Frost: no cubic term to compute
 
-        const float th = std::tanh (x);
+        // cubic branch: x - x^3/3 inside [-1, 1], held at +/-2/3 outside (branch-free)
+        const float xc = juce::jlimit (-1.0f, 1.0f, x);
+        const float cubic = xc - (xc * xc * xc) / 3.0f;
         return (1.0f - tanhBlend) * cubic + tanhBlend * th;
     }
 
+    void setupBias (double sr) noexcept
+    {
+        envAtk = 1.0f - std::exp (-1.0f / (stageEnvAttackSec * (float) sr));
+        envRel = 1.0f - std::exp (-1.0f / (stageEnvReleaseSec * (float) sr));
+        dcA = 1.0f - std::exp (-2.0f * juce::MathConstants<float>::pi * stageCouplingHz / (float) sr);
+        env = dcLp = hiLp = 0.0f;
+        biasTick = 0;
+        hiA = 1.0f - std::exp (-2.0f * juce::MathConstants<float>::pi * highBandCornerHz / (float) sr);
+    }
+    unsigned biasTick = 0;
+    float bias = stageBiasStatic, shapedBias = 0.0f;
+    float env = 0.0f, dcLp = 0.0f, envAtk = 0.0f, envRel = 0.0f, dcA = 0.0f;
+    float hiA = 0.0f, hiLp = 0.0f;
     float driveBase = 1.0f, drive = 1.0f, outGain = 1.0f, tanhBlend = 0.5f;
-    juce::dsp::IIR::Filter<float> preEmphasis, postEmphasis;
+    juce::dsp::IIR::Coefficients<float>::Ptr preCoeffs, postCoeffs;
+    InlineBiquad preEmphasis, postEmphasis;
 };
 
 class Preamp

@@ -6,7 +6,7 @@
   "Source/DSP/OversampledStage.h": 50.0,
   "Source/DSP/PostEq.h": 100.0,
   "Source/DSP/PowerAmp.h": 90.0,
-  "Source/DSP/Preamp.h": 81.2,
+  "Source/DSP/Preamp.h": 92.0,
   "Source/DSP/ToneStack.h": 100.0,
   "Source/DSP/UserIRLoader.cpp": 61.5,
   "Source/Presets/PresetManager.cpp": 78.6

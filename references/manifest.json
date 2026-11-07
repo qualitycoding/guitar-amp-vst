@@ -1,0 +1,936 @@
+{
+  "schema_version": 1,
+  "gate": "G-010",
+  "sample_rate": 44100,
+  "format": "FLAC PCM-24 mono",
+  "excerpt_seconds_default": 12.0,
+  "sources": {
+    "jvm410h": {
+      "title": "Marshall JVM 410H Dataset",
+      "creators": "Štěpán Miklánek, Alec Wright, Vesa Välimäki, Jiří Schimmel",
+      "doi": "10.5281/zenodo.7970723",
+      "url": "https://zenodo.org/records/7970723/files/MarshallJVM410H.zip?download=1",
+      "licence": "CC-BY-4.0",
+      "hardware": "Marshall JVM 410H, OD1 channel; DI input and power-amp speaker output (no cabinet or microphone)",
+      "paper": "Miklánek et al., 'Neural Grey-Box Guitar Amplifier Modelling with Limited Data', DAFx23",
+      "vendored": true
+    },
+    "egipt": {
+      "title": "EG-IPT Dataset (Electric Guitar Instrumental Playing Techniques)",
+      "creators": "Marco Fiorini, Nicolas Brochec, Joakim Borg, Riccardo Pasini",
+      "doi": "10.5281/zenodo.15205644",
+      "url": "https://zenodo.org/records/15205644/files/EG-IPT.zip?download=1",
+      "licence": "CC-BY-4.0",
+      "hardware": "Gibson SG Standard into EVH 5150 III 50W 6L6 (controls flat, clean by measurement), Mesa 4x12 with Celestion V30; Shure SM57 at 2.5 cm (dyn), Peluso R14 at 24 cm (rib); BSS AR-133 DI",
+      "vendored": true
+    },
+    "tt_bluesjr": {
+      "title": "ToneTwist AFx Dataset - External: Fender Blues Jr",
+      "creators": "Keith Bloemer (GuitarML); compiled by Marco Comunità",
+      "doi": "10.5281/zenodo.10797977",
+      "url": "https://zenodo.org/records/10797977/files/Fender-BluesJr.zip?download=1",
+      "licence": "CC-BY-NC-4.0",
+      "hardware": "Fender Blues Junior, volume 5 and 10",
+      "vendored": false
+    },
+    "tt_markv": {
+      "title": "ToneTwist AFx Dataset - External: MesaBoogie Mark V - Channel: Extreme",
+      "creators": "Thomas Schmitz, Jean-Jacques Embrechts; compiled by Marco Comunità",
+      "doi": "10.5281/zenodo.10796864",
+      "url": "https://zenodo.org/records/10796864/files/MesaBoogie-MarkV-ChExtreme.zip?download=1",
+      "licence": "CC-BY-NC-4.0",
+      "hardware": "Mesa/Boogie Mark V, Extreme channel, gain 5",
+      "vendored": false
+    }
+  },
+  "presets": [
+    {
+      "preset": "preset01.xml",
+      "name": "70s Blues Rock",
+      "genre": "blues-rock",
+      "voicing": "Tweed",
+      "stem": "p01-70s-blues-rock",
+      "source": "tt_bluesjr",
+      "tier": "local-only",
+      "match": "partial",
+      "why": "Fender tube combo pushed into breakup; Blues Junior rather than a 5E3 Tweed Deluxe",
+      "setting": {
+        "volume": 10.0
+      },
+      "parts": [
+        {
+          "ref_member": "Fender-BluesJr/trainvaltest/V100/V100.trainvaltest.target.wav",
+          "di_member": "DRY/trainvaltest/trainvaltest.input.wav",
+          "start_s": 14.0,
+          "length_s": 12.0
+        }
+      ],
+      "render_overrides": {},
+      "render_note": "Check how the source recorded the amp output (mic or load box) before choosing ir-mix."
+    },
+    {
+      "preset": "preset02.xml",
+      "name": "Southern Rock",
+      "genre": "southern-rock",
+      "voicing": "Plexi",
+      "stem": "p02-southern-rock",
+      "source": "jvm410h",
+      "tier": "vendored",
+      "match": "partial",
+      "why": "Marshall family, but the JVM OD1 channel is a hotter, cascaded preamp than a Plexi",
+      "setting": {
+        "jvm_knobs": "B5_M6_T5_G5",
+        "target_knobs": {
+          "B": 5.5,
+          "M": 6.0,
+          "T": 5.0,
+          "G": 5.0
+        }
+      },
+      "content": {
+        "selection": "densest onsets (rhythm)",
+        "onsets_per_s": 12.67
+      },
+      "parts": [
+        {
+          "ref_member": "final/B5_M6_T5_G5/B5_M6_T5_G5-speakerout.wav",
+          "di_member": "final/B5_M6_T5_G5/B5_M6_T5_G5-input.wav",
+          "start_s": 166.0,
+          "length_s": 12.0
+        }
+      ],
+      "render_overrides": {
+        "ir-mix": 0.0
+      },
+      "render_note": "Reference is the power-amp speaker output with no cabinet or microphone: render the candidate with the cabinet bypassed (ir-mix 0).",
+      "files": {
+        "ref": {
+          "path": "references/audio/p02-southern-rock/ref.flac",
+          "pcm_sha256": "4296ffd1579ad8b8110ce3b4e39ebabef1c6ef5d02c55b5390b03472908e6375",
+          "seconds": 12.0
+        },
+        "di": {
+          "path": "references/audio/p02-southern-rock/di.flac",
+          "pcm_sha256": "23b3bee4c889da578b31267ca89c8bb853efb92229114b44448c688c2a705f5e",
+          "seconds": 12.0
+        }
+      }
+    },
+    {
+      "preset": "preset03.xml",
+      "name": "Classic Rock Crunch",
+      "genre": "classic-rock",
+      "voicing": "Plexi",
+      "stem": "p03-classic-rock-crunch",
+      "source": "jvm410h",
+      "tier": "vendored",
+      "match": "partial",
+      "why": "Marshall family, but the JVM OD1 channel is a hotter, cascaded preamp than a Plexi",
+      "setting": {
+        "jvm_knobs": "B5_M5_T5_G5",
+        "target_knobs": {
+          "B": 5.0,
+          "M": 5.5,
+          "T": 5.5,
+          "G": 5.5
+        }
+      },
+      "content": {
+        "selection": "densest onsets (rhythm)",
+        "onsets_per_s": 11.25
+      },
+      "parts": [
+        {
+          "ref_member": "final/B5_M5_T5_G5/B5_M5_T5_G5-speakerout.wav",
+          "di_member": "final/B5_M5_T5_G5/B5_M5_T5_G5-input.wav",
+          "start_s": 115.0,
+          "length_s": 12.0
+        }
+      ],
+      "render_overrides": {
+        "ir-mix": 0.0
+      },
+      "render_note": "Reference is the power-amp speaker output with no cabinet or microphone: render the candidate with the cabinet bypassed (ir-mix 0).",
+      "files": {
+        "ref": {
+          "path": "references/audio/p03-classic-rock-crunch/ref.flac",
+          "pcm_sha256": "9c47f8ef95082d7d04032aa4818dddfa9feabf42aed2e0e6a6c3806099c3dedb",
+          "seconds": 12.0
+        },
+        "di": {
+          "path": "references/audio/p03-classic-rock-crunch/di.flac",
+          "pcm_sha256": "d312f48e806b0d73258e45d1b186d27e2cad433a586f4ebc56c9da5dc3a32fd9",
+          "seconds": 12.0
+        }
+      }
+    },
+    {
+      "preset": "preset04.xml",
+      "name": "80s Hair Metal",
+      "genre": "hair-metal",
+      "voicing": "JCM800",
+      "stem": "p04-80s-hair-metal",
+      "source": "jvm410h",
+      "tier": "vendored",
+      "match": "close",
+      "why": "Marshall high-gain channel descended from the JCM800 2203 voicing",
+      "setting": {
+        "jvm_knobs": "B5_M5_T5_G6",
+        "target_knobs": {
+          "B": 5.0,
+          "M": 5.5,
+          "T": 6.5,
+          "G": 7.0
+        }
+      },
+      "content": {
+        "selection": "densest onsets (rhythm)",
+        "onsets_per_s": 10.58
+      },
+      "parts": [
+        {
+          "ref_member": "final/B5_M5_T5_G6/B5_M5_T5_G4-speakerout.wav",
+          "di_member": "final/B5_M5_T5_G6/B5_M5_T5_G4-input.wav",
+          "start_s": 109.0,
+          "length_s": 12.0
+        }
+      ],
+      "render_overrides": {
+        "ir-mix": 0.0
+      },
+      "render_note": "Reference is the power-amp speaker output with no cabinet or microphone: render the candidate with the cabinet bypassed (ir-mix 0).",
+      "files": {
+        "ref": {
+          "path": "references/audio/p04-80s-hair-metal/ref.flac",
+          "pcm_sha256": "29183f1faf462c3140a3af90139cb406f64e0a1f01dbe09ae614834ad6b52892",
+          "seconds": 12.0
+        },
+        "di": {
+          "path": "references/audio/p04-80s-hair-metal/di.flac",
+          "pcm_sha256": "ca9009078d4a10910af8bff42e995ddbb5cf0c6997173af2843c5d4015590f40",
+          "seconds": 12.0
+        }
+      }
+    },
+    {
+      "preset": "preset05.xml",
+      "name": "Thrash Attack",
+      "genre": "thrash",
+      "voicing": "JCM800",
+      "stem": "p05-thrash-attack",
+      "source": "jvm410h",
+      "tier": "vendored",
+      "match": "close",
+      "why": "Marshall high-gain channel descended from the JCM800 2203 voicing",
+      "setting": {
+        "jvm_knobs": "B5_M5_T5_G8",
+        "target_knobs": {
+          "B": 4.5,
+          "M": 6.0,
+          "T": 7.0,
+          "G": 8.0
+        }
+      },
+      "content": {
+        "selection": "densest onsets (rhythm)",
+        "onsets_per_s": 9.5
+      },
+      "parts": [
+        {
+          "ref_member": "final/B5_M5_T5_G8/B5_M5_T5_G8-speakerout.wav",
+          "di_member": "final/B5_M5_T5_G8/B5_M5_T5_G8-input.wav",
+          "start_s": 80.0,
+          "length_s": 12.0
+        }
+      ],
+      "render_overrides": {
+        "ir-mix": 0.0
+      },
+      "render_note": "Reference is the power-amp speaker output with no cabinet or microphone: render the candidate with the cabinet bypassed (ir-mix 0).",
+      "files": {
+        "ref": {
+          "path": "references/audio/p05-thrash-attack/ref.flac",
+          "pcm_sha256": "01ebffccdd1f82556dab15d1aa5d2f037cf8bf91d2751cb45ac294370b8cc4c6",
+          "seconds": 12.0
+        },
+        "di": {
+          "path": "references/audio/p05-thrash-attack/di.flac",
+          "pcm_sha256": "b139da8da92ce9d5905627185c746556dd7b790755107c4adcd82e97e46ec1d5",
+          "seconds": 12.0
+        }
+      }
+    },
+    {
+      "preset": "preset06.xml",
+      "name": "Bay Area Lead",
+      "genre": "thrash-lead",
+      "voicing": "JCM800",
+      "stem": "p06-bay-area-lead",
+      "source": "jvm410h",
+      "tier": "vendored",
+      "match": "close",
+      "why": "Marshall high-gain channel descended from the JCM800 2203 voicing",
+      "setting": {
+        "jvm_knobs": "B5_M5_T5_G8",
+        "target_knobs": {
+          "B": 4.5,
+          "M": 6.5,
+          "T": 7.0,
+          "G": 7.5
+        }
+      },
+      "content": {
+        "selection": "sparsest onsets (lead)",
+        "onsets_per_s": 2.25
+      },
+      "parts": [
+        {
+          "ref_member": "final/B5_M5_T5_G8/B5_M5_T5_G8-speakerout.wav",
+          "di_member": "final/B5_M5_T5_G8/B5_M5_T5_G8-input.wav",
+          "start_s": 189.0,
+          "length_s": 12.0
+        }
+      ],
+      "render_overrides": {
+        "ir-mix": 0.0
+      },
+      "render_note": "Reference is the power-amp speaker output with no cabinet or microphone: render the candidate with the cabinet bypassed (ir-mix 0).",
+      "files": {
+        "ref": {
+          "path": "references/audio/p06-bay-area-lead/ref.flac",
+          "pcm_sha256": "656a18475c00ff69f419afc6541b4d2938b92752cba6b4a2aeb098b2277af695",
+          "seconds": 12.0
+        },
+        "di": {
+          "path": "references/audio/p06-bay-area-lead/di.flac",
+          "pcm_sha256": "f1d559d7fc4421e99d34b644e7a1f6248101fdcf0cb5afb9a493c4c7f6b0039f",
+          "seconds": 12.0
+        }
+      }
+    },
+    {
+      "preset": "preset07.xml",
+      "name": "90s Groove",
+      "genre": "groove",
+      "voicing": "Recto",
+      "stem": "p07-90s-groove",
+      "source": "tt_markv",
+      "tier": "local-only",
+      "match": "partial",
+      "why": "Mesa/Boogie high-gain channel; Mark V Extreme rather than a Dual Rectifier",
+      "setting": {
+        "gain": 5
+      },
+      "parts": [
+        {
+          "ref_member": "MesaBoogie-MarkV-ChExtreme/trainval/G050/G050.train.target.wav",
+          "di_member": "DRY/trainval/train.input.wav",
+          "start_s": 14.0,
+          "length_s": 12.0
+        }
+      ],
+      "render_overrides": {},
+      "render_note": "Check how the source recorded the amp output (mic or load box) before choosing ir-mix."
+    },
+    {
+      "preset": "preset08.xml",
+      "name": "Nu-Metal Drop",
+      "genre": "nu-metal",
+      "voicing": "Recto",
+      "stem": "p08-nu-metal-drop",
+      "source": "tt_markv",
+      "tier": "local-only",
+      "match": "partial",
+      "why": "Mesa/Boogie high-gain channel; Mark V Extreme rather than a Dual Rectifier",
+      "setting": {
+        "gain": 5
+      },
+      "parts": [
+        {
+          "ref_member": "MesaBoogie-MarkV-ChExtreme/trainval/G050/G050.train.target.wav",
+          "di_member": "DRY/trainval/train.input.wav",
+          "start_s": 38.0,
+          "length_s": 12.0
+        }
+      ],
+      "render_overrides": {},
+      "render_note": "Check how the source recorded the amp output (mic or load box) before choosing ir-mix."
+    },
+    {
+      "preset": "preset09.xml",
+      "name": "Death Metal Chains",
+      "genre": "death-metal",
+      "voicing": "5150",
+      "stem": "p09-death-metal-chains",
+      "source": "jvm410h",
+      "tier": "vendored",
+      "match": "weak",
+      "why": "Real high-gain tube amp at matched gain, but Marshall voicing rather than 5150",
+      "setting": {
+        "jvm_knobs": "B5_M5_T5_G8",
+        "target_knobs": {
+          "B": 5.5,
+          "M": 4.5,
+          "T": 6.0,
+          "G": 8.5
+        }
+      },
+      "content": {
+        "selection": "densest onsets (rhythm)",
+        "onsets_per_s": 8.75
+      },
+      "parts": [
+        {
+          "ref_member": "final/B5_M5_T5_G8/B5_M5_T5_G8-speakerout.wav",
+          "di_member": "final/B5_M5_T5_G8/B5_M5_T5_G8-input.wav",
+          "start_s": 87.0,
+          "length_s": 12.0
+        }
+      ],
+      "render_overrides": {
+        "ir-mix": 0.0
+      },
+      "render_note": "Reference is the power-amp speaker output with no cabinet or microphone: render the candidate with the cabinet bypassed (ir-mix 0).",
+      "files": {
+        "ref": {
+          "path": "references/audio/p09-death-metal-chains/ref.flac",
+          "pcm_sha256": "c400a98cbb54282b05a7b36ab5d2a6aeba6a3b1386bdee4e2b38629a85350065",
+          "seconds": 12.0
+        },
+        "di": {
+          "path": "references/audio/p09-death-metal-chains/di.flac",
+          "pcm_sha256": "06bf5bbd4c3e45184528bd8511eff66d01354397b31c432dca85896e03fb82bc",
+          "seconds": 12.0
+        }
+      }
+    },
+    {
+      "preset": "preset10.xml",
+      "name": "Florida Trem",
+      "genre": "death-metal",
+      "voicing": "5150",
+      "stem": "p10-florida-trem",
+      "source": "jvm410h",
+      "tier": "vendored",
+      "match": "weak",
+      "why": "Real high-gain tube amp at matched gain, but Marshall voicing rather than 5150",
+      "setting": {
+        "jvm_knobs": "B5_M5_T5_G8",
+        "target_knobs": {
+          "B": 5.0,
+          "M": 5.5,
+          "T": 6.5,
+          "G": 8.0
+        }
+      },
+      "content": {
+        "selection": "densest onsets (rhythm)",
+        "onsets_per_s": 8.42
+      },
+      "parts": [
+        {
+          "ref_member": "final/B5_M5_T5_G8/B5_M5_T5_G8-speakerout.wav",
+          "di_member": "final/B5_M5_T5_G8/B5_M5_T5_G8-input.wav",
+          "start_s": 102.0,
+          "length_s": 12.0
+        }
+      ],
+      "render_overrides": {
+        "ir-mix": 0.0
+      },
+      "render_note": "Reference is the power-amp speaker output with no cabinet or microphone: render the candidate with the cabinet bypassed (ir-mix 0).",
+      "files": {
+        "ref": {
+          "path": "references/audio/p10-florida-trem/ref.flac",
+          "pcm_sha256": "f98e80c21d314b0738f4840317aaa3c0c66051253eeaadb068f7d898968c95e6",
+          "seconds": 12.0
+        },
+        "di": {
+          "path": "references/audio/p10-florida-trem/di.flac",
+          "pcm_sha256": "6b6b4ec5063e8c4cfa93e3e18c394cdb683b3291ac44d92402e054d49d2c36a0",
+          "seconds": 12.0
+        }
+      }
+    },
+    {
+      "preset": "preset11.xml",
+      "name": "Swedish Chainsaw",
+      "genre": "swedish-death",
+      "voicing": "Chainsaw",
+      "stem": "p11-swedish-chainsaw",
+      "tier": "none",
+      "match": "none",
+      "why": "No redistributable or research-licensed real Boss HM-2 recording with a paired DI was found."
+    },
+    {
+      "preset": "preset12.xml",
+      "name": "Stockholm Buzz",
+      "genre": "swedish-death",
+      "voicing": "Chainsaw",
+      "stem": "p12-stockholm-buzz",
+      "tier": "none",
+      "match": "none",
+      "why": "No redistributable or research-licensed real Boss HM-2 recording with a paired DI was found."
+    },
+    {
+      "preset": "preset13.xml",
+      "name": "Black Metal Frost",
+      "genre": "black-metal",
+      "voicing": "Frost",
+      "stem": "p13-black-metal-frost",
+      "tier": "none",
+      "match": "none",
+      "why": "No black-metal-voiced real-amp recording with a paired DI was found under an open or research licence."
+    },
+    {
+      "preset": "preset14.xml",
+      "name": "Cavernous Hiss",
+      "genre": "black-metal",
+      "voicing": "Frost",
+      "stem": "p14-cavernous-hiss",
+      "tier": "none",
+      "match": "none",
+      "why": "No black-metal-voiced real-amp recording with a paired DI was found under an open or research licence."
+    },
+    {
+      "preset": "preset15.xml",
+      "name": "Doom Sludge",
+      "genre": "doom-sludge",
+      "voicing": "Recto",
+      "stem": "p15-doom-sludge",
+      "source": "tt_markv",
+      "tier": "local-only",
+      "match": "partial",
+      "why": "Mesa/Boogie high-gain channel; Mark V Extreme rather than a Dual Rectifier",
+      "setting": {
+        "gain": 5
+      },
+      "parts": [
+        {
+          "ref_member": "MesaBoogie-MarkV-ChExtreme/trainval/G050/G050.train.target.wav",
+          "di_member": "DRY/trainval/train.input.wav",
+          "start_s": 62.0,
+          "length_s": 12.0
+        }
+      ],
+      "render_overrides": {},
+      "render_note": "Check how the source recorded the amp output (mic or load box) before choosing ir-mix."
+    },
+    {
+      "preset": "preset16.xml",
+      "name": "Funeral March",
+      "genre": "doom",
+      "voicing": "5150",
+      "stem": "p16-funeral-march",
+      "source": "jvm410h",
+      "tier": "vendored",
+      "match": "weak",
+      "why": "Real high-gain tube amp at matched gain, but Marshall voicing rather than 5150",
+      "setting": {
+        "jvm_knobs": "B8_M5_T5_G5",
+        "target_knobs": {
+          "B": 8.0,
+          "M": 4.5,
+          "T": 3.5,
+          "G": 6.5
+        }
+      },
+      "content": {
+        "selection": "densest onsets (rhythm)",
+        "onsets_per_s": 8.33
+      },
+      "parts": [
+        {
+          "ref_member": "final/B8_M5_T5_G5/B8_M5_T5_G5-speakerout.wav",
+          "di_member": "final/B8_M5_T5_G5/B8_M5_T5_G5-input.wav",
+          "start_s": 94.0,
+          "length_s": 12.0
+        }
+      ],
+      "render_overrides": {
+        "ir-mix": 0.0
+      },
+      "render_note": "Reference is the power-amp speaker output with no cabinet or microphone: render the candidate with the cabinet bypassed (ir-mix 0).",
+      "files": {
+        "ref": {
+          "path": "references/audio/p16-funeral-march/ref.flac",
+          "pcm_sha256": "fafeabec2dfb1343a1100cfa83ade99c878f6a6d2bb4edf64e04a03d933a61c7",
+          "seconds": 12.0
+        },
+        "di": {
+          "path": "references/audio/p16-funeral-march/di.flac",
+          "pcm_sha256": "7b139faca50798cba92baadd10e136d7e027bb58e4aed6eefba6e9b1d2edb526",
+          "seconds": 12.0
+        }
+      }
+    },
+    {
+      "preset": "preset17.xml",
+      "name": "Djent Machine",
+      "genre": "djent",
+      "voicing": "5150",
+      "stem": "p17-djent-machine",
+      "source": "jvm410h",
+      "tier": "vendored",
+      "match": "weak",
+      "why": "Real high-gain tube amp at matched gain, but Marshall voicing rather than 5150",
+      "setting": {
+        "jvm_knobs": "B5_M5_T5_G6",
+        "target_knobs": {
+          "B": 5.0,
+          "M": 5.0,
+          "T": 6.0,
+          "G": 7.0
+        }
+      },
+      "content": {
+        "selection": "densest onsets (rhythm)",
+        "onsets_per_s": 7.42
+      },
+      "parts": [
+        {
+          "ref_member": "final/B5_M5_T5_G6/B5_M5_T5_G4-speakerout.wav",
+          "di_member": "final/B5_M5_T5_G6/B5_M5_T5_G4-input.wav",
+          "start_s": 134.0,
+          "length_s": 12.0
+        }
+      ],
+      "render_overrides": {
+        "ir-mix": 0.0
+      },
+      "render_note": "Reference is the power-amp speaker output with no cabinet or microphone: render the candidate with the cabinet bypassed (ir-mix 0).",
+      "files": {
+        "ref": {
+          "path": "references/audio/p17-djent-machine/ref.flac",
+          "pcm_sha256": "83a889a657a3099c8b6cd9dc458b51f642f62e715bb3daca78e4c1fab3108bbd",
+          "seconds": 12.0
+        },
+        "di": {
+          "path": "references/audio/p17-djent-machine/di.flac",
+          "pcm_sha256": "97d67fac3effa05a1a0b5a91519c1e9f2eb95ecb0f9f7178222d582f74a5bb65",
+          "seconds": 12.0
+        }
+      }
+    },
+    {
+      "preset": "preset18.xml",
+      "name": "Modern Prog Lead",
+      "genre": "prog",
+      "voicing": "5150",
+      "stem": "p18-modern-prog-lead",
+      "source": "jvm410h",
+      "tier": "vendored",
+      "match": "weak",
+      "why": "Real high-gain tube amp at matched gain, but Marshall voicing rather than 5150",
+      "setting": {
+        "jvm_knobs": "B5_M5_T5_G6",
+        "target_knobs": {
+          "B": 4.5,
+          "M": 6.5,
+          "T": 6.5,
+          "G": 7.0
+        }
+      },
+      "content": {
+        "selection": "sparsest onsets (lead)",
+        "onsets_per_s": 4.17
+      },
+      "parts": [
+        {
+          "ref_member": "final/B5_M5_T5_G6/B5_M5_T5_G4-speakerout.wav",
+          "di_member": "final/B5_M5_T5_G6/B5_M5_T5_G4-input.wav",
+          "start_s": 233.0,
+          "length_s": 12.0
+        }
+      ],
+      "render_overrides": {
+        "ir-mix": 0.0
+      },
+      "render_note": "Reference is the power-amp speaker output with no cabinet or microphone: render the candidate with the cabinet bypassed (ir-mix 0).",
+      "files": {
+        "ref": {
+          "path": "references/audio/p18-modern-prog-lead/ref.flac",
+          "pcm_sha256": "e44533cb4c4bc0dcdd2cf21fd199977b01a83f782d049db565cdbbdba2c08986",
+          "seconds": 12.0
+        },
+        "di": {
+          "path": "references/audio/p18-modern-prog-lead/di.flac",
+          "pcm_sha256": "334544a4bedf04fe7841a2a8579027cc70622fb7526177494ebb1973b050b276",
+          "seconds": 12.0
+        }
+      }
+    },
+    {
+      "preset": "preset19.xml",
+      "name": "Djent Clean",
+      "genre": "djent-clean",
+      "voicing": "Tweed",
+      "stem": "p19-djent-clean",
+      "source": "egipt",
+      "tier": "vendored",
+      "match": "partial",
+      "why": "Clean real tube amp and 4x12 V30 cab, but EVH 5150 III clean channel, not a Tweed circuit",
+      "setting": {
+        "pickup": "HB-neck",
+        "mic": "dyn",
+        "amp": "controls flat (clean)"
+      },
+      "content": {
+        "selection": "six single notes, strings 6 to 1, 2 s each"
+      },
+      "parts": [
+        {
+          "ref_member": "EG-IPT/HB-neck/dyn/ordinario/HB-neck_ordinario_01-02_6s_dyn.wav",
+          "di_member": "EG-IPT/HB-neck/DI/ordinario/HB-neck_ordinario_01-02_6s_DI.wav",
+          "start_s": 0.0,
+          "length_s": 2.0
+        },
+        {
+          "ref_member": "EG-IPT/HB-neck/dyn/ordinario/HB-neck_ordinario_02-02_5s_dyn.wav",
+          "di_member": "EG-IPT/HB-neck/DI/ordinario/HB-neck_ordinario_02-02_5s_DI.wav",
+          "start_s": 0.0,
+          "length_s": 2.0
+        },
+        {
+          "ref_member": "EG-IPT/HB-neck/dyn/ordinario/HB-neck_ordinario_03-02_4s_dyn.wav",
+          "di_member": "EG-IPT/HB-neck/DI/ordinario/HB-neck_ordinario_03-02_4s_DI.wav",
+          "start_s": 0.0,
+          "length_s": 2.0
+        },
+        {
+          "ref_member": "EG-IPT/HB-neck/dyn/ordinario/HB-neck_ordinario_04-02_3s_dyn.wav",
+          "di_member": "EG-IPT/HB-neck/DI/ordinario/HB-neck_ordinario_04-02_3s_DI.wav",
+          "start_s": 0.0,
+          "length_s": 2.0
+        },
+        {
+          "ref_member": "EG-IPT/HB-neck/dyn/ordinario/HB-neck_ordinario_05-02_2s_dyn.wav",
+          "di_member": "EG-IPT/HB-neck/DI/ordinario/HB-neck_ordinario_05-02_2s_DI.wav",
+          "start_s": 0.0,
+          "length_s": 2.0
+        },
+        {
+          "ref_member": "EG-IPT/HB-neck/dyn/ordinario/HB-neck_ordinario_06-02_1s_dyn.wav",
+          "di_member": "EG-IPT/HB-neck/DI/ordinario/HB-neck_ordinario_06-02_1s_DI.wav",
+          "start_s": 0.0,
+          "length_s": 2.0
+        }
+      ],
+      "render_overrides": {},
+      "render_note": "Reference includes a real 4x12 V30 cab and microphone: render with the preset as is.",
+      "files": {
+        "ref": {
+          "path": "references/audio/p19-djent-clean/ref.flac",
+          "pcm_sha256": "eff05b0c3d5c5735eccb704f70c4b66dde393c179aee40fc534c2c8fee9033db",
+          "seconds": 12.0
+        },
+        "di": {
+          "path": "references/audio/p19-djent-clean/di.flac",
+          "pcm_sha256": "76bc09bce6c4d509f586d9eb8b9ba091fe1fe4e0c318b7f9f5b63bec3dd26c91",
+          "seconds": 12.0
+        }
+      }
+    },
+    {
+      "preset": "preset20.xml",
+      "name": "Ambient Washtub",
+      "genre": "ambient",
+      "voicing": "Plexi",
+      "stem": "p20-ambient-washtub",
+      "source": "egipt",
+      "tier": "vendored",
+      "match": "partial",
+      "why": "Low-gain preset: clean real tube amp with the ribbon mic at 24 cm for the ambient character; 5150 III clean, not a Plexi",
+      "setting": {
+        "pickup": "HB-couple",
+        "mic": "rib",
+        "amp": "controls flat (clean)"
+      },
+      "content": {
+        "selection": "six single notes, strings 6 to 1, 2 s each"
+      },
+      "parts": [
+        {
+          "ref_member": "EG-IPT/HB-couple/rib/ordinario/HB-couple_ordinario_07-02_6s_rib.wav",
+          "di_member": "EG-IPT/HB-couple/DI/ordinario/HB-couple_ordinario_07-02_6s_DI.wav",
+          "start_s": 0.0,
+          "length_s": 2.0
+        },
+        {
+          "ref_member": "EG-IPT/HB-couple/rib/ordinario/HB-couple_ordinario_08-02_5s_rib.wav",
+          "di_member": "EG-IPT/HB-couple/DI/ordinario/HB-couple_ordinario_08-02_5s_DI.wav",
+          "start_s": 0.0,
+          "length_s": 2.0
+        },
+        {
+          "ref_member": "EG-IPT/HB-couple/rib/ordinario/HB-couple_ordinario_09-02_4s_rib.wav",
+          "di_member": "EG-IPT/HB-couple/DI/ordinario/HB-couple_ordinario_09-02_4s_DI.wav",
+          "start_s": 0.0,
+          "length_s": 2.0
+        },
+        {
+          "ref_member": "EG-IPT/HB-couple/rib/ordinario/HB-couple_ordinario_10-02_3s_rib.wav",
+          "di_member": "EG-IPT/HB-couple/DI/ordinario/HB-couple_ordinario_10-02_3s_DI.wav",
+          "start_s": 0.0,
+          "length_s": 2.0
+        },
+        {
+          "ref_member": "EG-IPT/HB-couple/rib/ordinario/HB-couple_ordinario_11-02_2s_rib.wav",
+          "di_member": "EG-IPT/HB-couple/DI/ordinario/HB-couple_ordinario_11-02_2s_DI.wav",
+          "start_s": 0.0,
+          "length_s": 2.0
+        },
+        {
+          "ref_member": "EG-IPT/HB-couple/rib/ordinario/HB-couple_ordinario_12-02_1s_rib.wav",
+          "di_member": "EG-IPT/HB-couple/DI/ordinario/HB-couple_ordinario_12-02_1s_DI.wav",
+          "start_s": 0.0,
+          "length_s": 2.0
+        }
+      ],
+      "render_overrides": {},
+      "render_note": "Reference includes a real 4x12 V30 cab and microphone: render with the preset as is.",
+      "files": {
+        "ref": {
+          "path": "references/audio/p20-ambient-washtub/ref.flac",
+          "pcm_sha256": "20a1b85620778ac136878fa472131bd3ebf70450f9ac05c60b466f72625bce4e",
+          "seconds": 12.0
+        },
+        "di": {
+          "path": "references/audio/p20-ambient-washtub/di.flac",
+          "pcm_sha256": "80ddbfdc6a7fcafc5151e2e14a95c5d85d07e142947ea8839f06ae431c71a192",
+          "seconds": 12.0
+        }
+      }
+    },
+    {
+      "preset": "preset21.xml",
+      "name": "Crunch Rhythm",
+      "genre": "utility",
+      "voicing": "JCM800",
+      "stem": "p21-crunch-rhythm",
+      "source": "jvm410h",
+      "tier": "vendored",
+      "match": "close",
+      "why": "Marshall high-gain channel descended from the JCM800 2203 voicing",
+      "setting": {
+        "jvm_knobs": "B5_M5_T5_G4",
+        "target_knobs": {
+          "B": 5.0,
+          "M": 5.5,
+          "T": 5.5,
+          "G": 4.5
+        }
+      },
+      "content": {
+        "selection": "densest onsets (rhythm)",
+        "onsets_per_s": 7.33
+      },
+      "parts": [
+        {
+          "ref_member": "final/B5_M5_T5_G4/B5_M5_T5_G4-speakerout.wav",
+          "di_member": "final/B5_M5_T5_G4/B5_M5_T5_G4-input.wav",
+          "start_s": 275.0,
+          "length_s": 12.0
+        }
+      ],
+      "render_overrides": {
+        "ir-mix": 0.0
+      },
+      "render_note": "Reference is the power-amp speaker output with no cabinet or microphone: render the candidate with the cabinet bypassed (ir-mix 0).",
+      "files": {
+        "ref": {
+          "path": "references/audio/p21-crunch-rhythm/ref.flac",
+          "pcm_sha256": "cb2ea95c49c76a9d3482c78bf696f462a8609392752d9d13b777801673baf569",
+          "seconds": 12.0
+        },
+        "di": {
+          "path": "references/audio/p21-crunch-rhythm/di.flac",
+          "pcm_sha256": "48756223b2f77822864cd37f379530cd21d7c5864eeaf58ec15b8fe2d278d0d6",
+          "seconds": 12.0
+        }
+      }
+    },
+    {
+      "preset": "preset22.xml",
+      "name": "Edge of Breakup",
+      "genre": "utility",
+      "voicing": "Tweed",
+      "stem": "p22-edge-of-breakup",
+      "source": "tt_bluesjr",
+      "tier": "local-only",
+      "match": "partial",
+      "why": "Fender tube combo pushed into breakup; Blues Junior rather than a 5E3 Tweed Deluxe",
+      "setting": {
+        "volume": 5.0
+      },
+      "parts": [
+        {
+          "ref_member": "Fender-BluesJr/trainvaltest/V050/V050.trainvaltest.target.wav",
+          "di_member": "DRY/trainvaltest/trainvaltest.input.wav",
+          "start_s": 38.0,
+          "length_s": 12.0
+        }
+      ],
+      "render_overrides": {},
+      "render_note": "Check how the source recorded the amp output (mic or load box) before choosing ir-mix."
+    },
+    {
+      "preset": "preset23.xml",
+      "name": "Solo Scream",
+      "genre": "lead",
+      "voicing": "JCM800",
+      "stem": "p23-solo-scream",
+      "source": "jvm410h",
+      "tier": "vendored",
+      "match": "close",
+      "why": "Marshall high-gain channel descended from the JCM800 2203 voicing",
+      "setting": {
+        "jvm_knobs": "B5_M5_T5_G8",
+        "target_knobs": {
+          "B": 4.0,
+          "M": 7.0,
+          "T": 7.0,
+          "G": 8.5
+        }
+      },
+      "content": {
+        "selection": "sparsest onsets (lead)",
+        "onsets_per_s": 4.42
+      },
+      "parts": [
+        {
+          "ref_member": "final/B5_M5_T5_G8/B5_M5_T5_G8-speakerout.wav",
+          "di_member": "final/B5_M5_T5_G8/B5_M5_T5_G8-input.wav",
+          "start_s": 220.0,
+          "length_s": 12.0
+        }
+      ],
+      "render_overrides": {
+        "ir-mix": 0.0
+      },
+      "render_note": "Reference is the power-amp speaker output with no cabinet or microphone: render the candidate with the cabinet bypassed (ir-mix 0).",
+      "files": {
+        "ref": {
+          "path": "references/audio/p23-solo-scream/ref.flac",
+          "pcm_sha256": "a25c1c187dd5c03c295b9f7221b2cdc81de330fc1700a6ae9ece10b7fcc4602c",
+          "seconds": 12.0
+        },
+        "di": {
+          "path": "references/audio/p23-solo-scream/di.flac",
+          "pcm_sha256": "d30b9b74f6801268bd3b4567de8a673387d4d6b061a7f0e1b399fcc2576e5b2a",
+          "seconds": 12.0
+        }
+      }
+    },
+    {
+      "preset": "preset24.xml",
+      "name": "Midnight Frost Lead",
+      "genre": "lead",
+      "voicing": "Frost",
+      "stem": "p24-midnight-frost-lead",
+      "tier": "none",
+      "match": "none",
+      "why": "No black-metal-voiced real-amp recording with a paired DI was found under an open or research licence."
+    }
+  ]
+}

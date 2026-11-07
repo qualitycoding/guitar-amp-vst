@@ -2,11 +2,11 @@
   "schema_version": 1,
   "repository": "qualitycoding/guitar-amp-vst",
   "branch": "impl-run-20261027T120000Z-guitar-amp-vst",
-  "candidate_commit": "edd8f90a7886f2e9da67e1f029ef0485153a6c74",
+  "candidate_commit": "fd21c33",
   "gate_id": "G-010",
   "round": 1,
   "test_type": "realism",
-  "status": "blocked",
+  "status": "scored-fail",
   "prerequisites": [
     {
       "id": "PR-001",
@@ -20,25 +20,30 @@
     },
     {
       "id": "PR-003",
-      "status": "blocked",
-      "evidence": "Redistribution-compatible real-amp/reference recordings or an explicit demos-only rescope decision are required."
+      "status": "partial",
+      "evidence": "Real-amp references with paired DIs: 14 presets in references/audio (CC BY 4.0: Marshall JVM 410H, EVH 5150 III/EG-IPT), 5 local-only (CC BY-NC 4.0: Fender Blues Jr, Mesa Mark V), 5 with none (Chainsaw p11-p12, Frost p13-p14/p24). See references/README.md and references/manifest.json."
     }
   ],
   "frozen_metrics": [],
   "reference": {
-    "kind": "not-rendered",
-    "source_ids": [],
-    "licence_or_consent": "not-established",
-    "redistribution": "private-local-only",
-    "checksums": ""
+    "kind": "real-amp recordings with simultaneous DI (partial coverage)",
+    "source_ids": [
+      "10.5281/zenodo.7970723",
+      "10.5281/zenodo.15205644",
+      "10.5281/zenodo.10797977",
+      "10.5281/zenodo.10796864"
+    ],
+    "licence_or_consent": "CC BY 4.0 (vendored); CC BY-NC 4.0 (local-only, not committed)",
+    "redistribution": "CC BY 4.0 excerpts committed under references/audio with ATTRIBUTION.md; CC BY-NC excerpts private-local-only",
+    "checksums": "references/manifest.json (pcm_sha256 per file)"
   },
   "candidate_renders": {
-    "manifest": "",
+    "manifest": "listening-work/G-010/round-001/cand (14 files, rendered by scripts/render_candidates.py from references/manifest.json overrides)",
     "checksums": ""
   },
   "pair_builder": {
     "script": "scripts/make_blind_pairs.py",
-    "commit": "",
+    "commit": "7bc15b6",
     "seed": 20261103,
     "pairs": 12,
     "window": "start",
@@ -56,21 +61,40 @@
     "private_location_id": "guitar-amp-vst-G-010-owner-local"
   },
   "answers": {
-    "ordered": "",
-    "submitted_at": "",
-    "same_side_count": 0
+    "ordered": "A,A,B,B,B,B,A,A,A,A,A,A",
+    "submitted_at": "2026-11-03",
+    "same_side_count": 9
   },
   "score": {
-    "correct": 0,
+    "correct": 9,
     "total": 12,
-    "one_sided_p": null,
-    "pass_condition": "correct <= 8 && no unresolved qualitative finding"
+    "one_sided_p": 0.073,
+    "pass_condition": "correct <= 8 && no unresolved qualitative finding",
+    "verdict": "fail (9/12 > 8)"
   },
-  "qualitative_findings": [],
-  "iterations": [],
+  "qualitative_findings": [
+    {
+      "verbatim": "The clean tones were practically indistinguishable but the others all had more grit in the real clip",
+      "pairs_wrong": [
+        "pair-04 p20-ambient-washtub",
+        "pair-05 p05-thrash-attack",
+        "pair-08 p06-bay-area-lead"
+      ],
+      "note": "clean pairs: pair-04 wrong, pair-06 correct"
+    }
+  ],
+  "iterations": [
+    {
+      "round": 1,
+      "measurement": "scripts/render + welch band levels, candidate (ir-mix 0) minus reference, 14 pairs: mean -6.9 dB (2-4k), -10.9 dB (4-8k), -13.0 dB (8-16k); worst Plexi/JCM800 low-drive presets -15..-37 dB; crest factor candidate 3.8-7.4 dB vs reference 9.7-11.6 dB for the 10 Marshall pairs; clean pairs within ~1 dB crest. On p02, drive 0.9 still 15 dB under reference at 4-8k; treble/presence/Eco/sag change it <2 dB.",
+      "hypothesis": "harmonic generation above ~2 kHz is too weak and the shaper is over-compressing; post-emphasis shelf (-preG per stage) additionally attenuates the generated harmonics",
+      "next_seed": 20262103,
+      "change": "D-001x partial de-emphasis (round-2 pairs v1), then D-001y 150 Hz coupling corner + 0.3 low path (round-2 pairs final); see DEVIATIONS.md"
+    }
+  ],
   "response": {
-    "value": "blocked",
-    "recorded_at": "2026-11-02T14:15:19Z",
+    "value": "iterate",
+    "recorded_at": "2026-11-03",
     "file": "GATE-G-010.LISTENING.md"
   },
   "resume": {

@@ -23,3 +23,12 @@ validation/*.png
 
 # Keep .checkpoints/ committed (protocol requirement) but not local snapshots
 .checkpoints/snapshots/
+
+# Local listening work and CC BY-NC reference excerpts (never commit; see references/README.md)
+
+# D-001ac: material derived from CC BY-NC references is local only and never committed
+listening-work/references-nc/
+listening-work/G-010/round-006/*
+!listening-work/G-010/round-006/listener-bundle/
+!listening-work/G-010/round-006/listener-bundle.zip
+!listening-work/G-010/round-006/NOTICE.md

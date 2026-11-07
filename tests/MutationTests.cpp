@@ -1373,6 +1373,159 @@ struct AutomationStressTest : juce::UnitTest
     }
 };
 
+
+// ---- Preamp stage (G-010 research rounds, D-001x..D-001ae): independent re-statement of the stage ----
+struct PreampMutationTest : juce::UnitTest
+{
+    PreampMutationTest() : juce::UnitTest ("preamp_reference") {}
+
+    // The constants are restated here on purpose: a changed constant in Preamp.h must fail this test.
+    struct Ref
+    {
+        float preF, preG, outG, driveBase, blend;
+        double rate;
+        bool highBand = true, dynamicBias = true;
+
+        std::vector<float> run (const std::vector<float>& in, float knob) const
+        {
+            const float drive = driveBase * (0.25f + 3.75f * std::sqrt (juce::jlimit (0.0f, 1.0f, knob)));
+            Filter pre, post;
+            pre.coefficients  = Coeffs::makeHighShelf (rate, preF, 0.7071f, juce::Decibels::decibelsToGain (preG));
+            post.coefficients = Coeffs::makeHighShelf (rate, preF, 0.7071f, juce::Decibels::decibelsToGain (-preG * 0.5f));
+            pre.reset();
+            post.reset();
+            const float outGain = juce::Decibels::decibelsToGain (outG);
+            const float atk = 1.0f - std::exp (-1.0f / (0.001f * (float) rate));
+            const float rel = 1.0f - std::exp (-1.0f / (0.05f * (float) rate));
+            const float dcA = 1.0f - std::exp (-2.0f * 3.14159265f * 15.0f / (float) rate);
+            const float hiA = 1.0f - std::exp (-2.0f * 3.14159265f * 1200.0f / (float) rate);
+            auto shape = [this] (float x)
+            {
+                const float xc = juce::jlimit (-1.0f, 1.0f, x);
+                const float cubic = xc - xc * xc * xc / 3.0f;
+                return (1.0f - blend) * cubic + blend * std::tanh (x);
+            };
+            std::vector<float> out (in.size());
+            float env = 0, dcLp = 0, hiLp = 0, bias = 0.4f, shapedBias = 0;
+            unsigned tick = 0;
+            for (size_t i = 0; i < in.size(); ++i)
+            {
+                float x = in[i];
+                hiLp += hiA * (x - hiLp);
+                const float z = 6.0f * drive * drive * (x - hiLp);
+                const float over = z - juce::jlimit (-1.0f, 1.0f, z);
+                const float hiOut = over / (1.0f + std::abs (over));
+                x = pre.processSample (x);
+                x *= drive;
+                const float a = std::abs (x);
+                env += (a > env ? atk : rel) * (a - env);
+                if ((tick++ & 7) == 0)
+                {
+                    bias = 0.4f + (dynamicBias ? 0.5f : 0.0f) * env;
+                    shapedBias = shape (bias);
+                }
+                const float y = shape (x + bias) - shapedBias;
+                dcLp += dcA * (y - dcLp);
+                x = y - dcLp;
+                if (highBand)
+                    x += 0.25f * hiOut;
+                x *= outGain;
+                out[i] = post.processSample (x);
+            }
+            return out;
+        }
+    };
+
+    // a loud two-tone burst, then silence: exercises the high band, the envelope attack and release and the DC block
+    static std::vector<float> burst (int n, int burstLen, double rate)
+    {
+        std::vector<float> v ((size_t) n, 0.0f);
+        for (int i = 0; i < burstLen; ++i)
+            v[(size_t) i] = 0.3f * (float) std::sin (2.0 * juce::MathConstants<double>::pi * 3000.0 * i / rate)
+                          + 0.2f * (float) std::sin (2.0 * juce::MathConstants<double>::pi * 100.0 * i / rate);
+        return v;
+    }
+
+    void runTest() override
+    {
+        beginTest ("fastTanh stays within 1e-4 of tanh and saturates at +/-1");
+        {
+            float worst = 0.0f;
+            for (float x = -8.0f; x <= 8.0f; x += 0.001f)
+                worst = juce::jmax (worst, std::abs (gramp::fastTanh (x) - std::tanh (x)));
+            expectLessThan (worst, 1.0e-4f);
+            expectWithinAbsoluteError (gramp::fastTanh (50.0f), 1.0f, 1.0e-5f);
+            expectWithinAbsoluteError (gramp::fastTanh (-50.0f), -1.0f, 1.0e-5f);
+            expectLessOrEqual (gramp::fastTanh (50.0f), 1.0f);
+            expectGreaterOrEqual (gramp::fastTanh (-50.0f), -1.0f);
+            expectEquals (gramp::fastTanh (0.0f), 0.0f);
+            expectWithinAbsoluteError (gramp::fastTanh (0.5f), 0.46211716f, 1.0e-4f);
+            expectWithinAbsoluteError (gramp::fastTanh (2.0f), 0.96402758f, 1.0e-4f);
+            expectWithinAbsoluteError (gramp::fastTanh (4.0f), 0.99932930f, 1.0e-4f);
+        }
+
+        beginTest ("preamp stage matches the documented bias / high-band / emphasis chain");
+        const int n = 6000, burstLen = 3000;
+        const auto in = burst (n, burstLen, kRate);
+        for (int v : { 0, 2, gramp::numVoicings - 1 })
+            for (bool second : { false, true })
+                for (float knob : { 0.3f, 1.0f })
+                {
+                    const auto& row = gramp::voicings[v];
+                    gramp::PreampStage stage;
+                    stage.prepare (kRate, row, second);
+                    stage.setDrive (knob);
+                    auto out = in;
+                    stage.process (out.data(), n);
+
+                    Ref ref { second ? row.s2PreFreq : row.s1PreFreq, second ? row.s2PreGainDb : row.s1PreGainDb,
+                              second ? row.s2OutGainDb : row.s1OutGainDb, second ? row.s2Drive : row.s1Drive,
+                              row.tanhBlend, kRate };
+                    const auto expected = ref.run (in, knob);
+                    float maxErr = 0.0f;
+                    for (int i = 0; i < n; ++i)
+                        maxErr = juce::jmax (maxErr, std::abs (out[(size_t) i] - expected[(size_t) i]));
+                    expectLessThan (maxErr, 1.0e-3f,
+                                    "voicing " + juce::String (v) + (second ? " stage 2" : " stage 1") + " knob " + juce::String (knob));
+
+                    // the test signal must actually exercise the parts it is meant to pin down
+                    if (knob > 0.9f)
+                    {
+                        auto noHigh = ref;  noHigh.highBand = false;
+                        auto noDyn = ref;   noDyn.dynamicBias = false;
+                        auto diff = [&] (const std::vector<float>& other)
+                        {
+                            float d = 0.0f;
+                            for (int i = 0; i < n; ++i)
+                                d = juce::jmax (d, std::abs (expected[(size_t) i] - other[(size_t) i]));
+                            return d;
+                        };
+                        expectGreaterThan (diff (noHigh.run (in, knob)), 5.0e-3f, "high band must matter in this test");
+                        expectGreaterThan (diff (noDyn.run (in, knob)), 5.0e-3f, "dynamic bias must matter in this test");
+                    }
+
+                    // after the burst the DC block has removed the offset and the output is quiet again
+                    double tailMean = 0.0;
+                    for (int i = n - 1000; i < n; ++i)
+                        tailMean += out[(size_t) i];
+                    expectLessThan (std::abs ((float) (tailMean / 1000.0)), 5.0e-3f, "no DC left after the burst");
+                }
+
+        beginTest ("preamp stage is silent for silence");
+        {
+            gramp::PreampStage stage;
+            stage.prepare (kRate, gramp::voicings[2], false);
+            stage.setDrive (1.0f);
+            std::vector<float> zeros (4000, 0.0f);
+            stage.process (zeros.data(), 4000);
+            float peak = 0.0f;
+            for (float s : zeros)
+                peak = juce::jmax (peak, std::abs (s));
+            expectLessThan (peak, 1.0e-6f);
+        }
+    }
+};
+
 BoostMutationTest tm1;
 NoiseGateMutationTest tm2;
 ToneStackMutationTest tm3;
@@ -1389,4 +1542,5 @@ BiquadDesignTest tm13;
 RetuneEquivalenceTest tm14;
 NoAudioThreadAllocationTest tm15;
 AutomationStressTest tm17;
+PreampMutationTest tm18;
 } // namespace

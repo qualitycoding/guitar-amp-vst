@@ -316,3 +316,101 @@ median are uploaded in the `bench-results-<os>` artifact.
 ### D-001w addendum - incremental runs gate per file
 
 Applying the skill showed that a project-wide floor on a single changed file would fail every change to files that legitimately score below it (CabIR.h 62.5 %, UserIRLoader.cpp 61.5 %, OversampledStage.h 50 %, with justified survivors in `reviews/MUTATION.md`). Incremental runs therefore gate each changed file against its score from the last full run (`reviews/mutation-baseline.json`, from run 41308370137, tolerance 5 points); full runs keep the 75 % project floor with at least 150 mutants. Refresh the baseline from a full run when scores legitimately move (`tools/ci/mull_score.py --write-baseline`); lowering a recorded score is a reviewed decision.
+
+### D-001x / D-001y - preamp stage changes after G-010 round 1
+
+Round 1 (9/12, listener: "the others all had more grit in the real clip") and the band/crest measurement against the real-amp references showed the candidates 7-13 dB under the references above 2 kHz and 4-7 dB under in crest factor. Two general changes in `Source/DSP/Preamp.h`:
+
+- **D-001x** the post-shaper shelf undoes half of the pre-emphasis boost (`deEmphasisFraction` 0.5). Effect on its own: about 1 dB at 8-16 kHz.
+- **D-001y** the shaper sees the signal above a 150 Hz coupling corner (one-pole high-pass); the lows go through a separate shaper path at weight 0.3 (`couplingCornerHz`, `lowPathMix`). Mean gap to the references, 2-4 kHz / 4-8 kHz / 8-16 kHz: -6.9/-10.7/-11.8 dB before, -3.4/-7.8/-8.9 dB after; crest 7.5 dB to 10.4 dB (references 11.1). The 80-250 Hz band falls to -8.4 dB against the references.
+- Music loudness fell about 4 dB. The frozen T-005 peak bound blocks raising `loudnessGainDb` (+0.3 of the needed change already fails it), so the trims were lowered to equalise the voicings instead (Tweed unchanged at +1.7, Plexi +0.39, JCM800 -0.78, Recto -2.10, 5150 -2.59, Chainsaw -3.54, Frost -3.73). Voicing spread 0.81 dB by BS.1770 K-weighting (limit 1.5); the plugin is about 5 dB quieter at the same master setting. All 31 ctest targets pass. Mull was not re-run, so T-070 for `Preamp.h` is unchecked.
+- Constants are set from the pooled 14-pair measurement, not per clip. The corner was chosen by sweeping 0-1000 Hz and taking the first value where crest factor reaches the references' (about 150-200 Hz).
+
+### D-001z - D-001y reverted, square-root drive knob law (G-010 round 3 candidate)
+
+Round 2 (11/12, listener: "the real clips have more grit and more weight") showed the 150 Hz coupling corner of D-001y thinned the low end. D-001y is removed; D-001x (half de-emphasis) stays. Stage isolation on the 14 reference pairs showed the preamp is the only source of 2-8 kHz energy (bypassing tone stack or power amp changes it by 1-2 dB) and that the low-drive presets are the ones far below the references. The drive knob law is now `0.25 + 3.75*sqrt(knob)` instead of linear; the ends of travel are unchanged. Mean gap to the references, 2-4/4-8/8-16 kHz: -6.9/-10.7/-11.8 dB before, -5.8/-8.6/-8.6 dB after; 80-250 Hz gap unchanged (-2.8 dB); crest 7.5 to 6.6 dB (references 11.1). Trims lowered by 0.6-1.7 dB (Tweed +0.04, Plexi -0.36, JCM800 -0.66, Recto -1.35, 5150 -1.48, Chainsaw -1.86, Frost -1.90); spread 1.10 dB (limit 1.5), mean loudness within 0.15 dB of before. 31/31 ctest. Mull not re-run. A harder shaper knee and larger pre-emphasis were measured and changed nothing (under 0.5 dB). Preset sounds change at mid-knob settings, so all 24 presets are affected.
+
+### D-001aa - envelope-driven stage bias (G-010 research round)
+
+After round 3 (7/12) the human asked for further research before another listening round. The literature (research/G-010-preamp-research.md) says real preamp stages are asymmetric and not memoryless: grid current and the cathode bypass capacitor move the bias with the signal envelope. Each `PreampStage` now shapes `x + b` with `b = 0.4 + 0.5 * envelope`, subtracts `shape(b)`, and blocks the DC with a 15 Hz one-pole high-pass (envelope attack 1 ms, release 50 ms). Measured on the 14 reference pairs: crest factor 6.9 to 10.4 dB (references 11.1), 80-250 Hz gap -3.3 to -0.8 dB; the 2-8 kHz gap barely changes (-5.6/-8.2 dB). Loudness fell about 6.7 dB at the old trims and the frozen sine-peak bound (T-005) blocks raising them, so the trims of every voicing but Tweed were lowered: Plexi -1.22, JCM800 -2.14, Recto -3.38, 5150 -3.77, Chainsaw -4.60, Frost -4.86 (Tweed +0.04 unchanged). Voicing spread 0.45 dB. The plugin is now about 6.7 dB quieter than at round 3 at the same master setting, which needs a human decision (master make-up gain or amending T-005's peak bound). 31/31 ctest. Mull not re-run.
+
+### D-001ac - reference-source licence policy (owner decision, 2026-11-05)
+
+The owner stated that GrimAmp is not a commercial development. That settles the open risk in using CC BY-NC
+reference data: the "commercial advantage" test in the licence does not apply. Policy for G-010 references and later
+ones:
+
+- Non-commercial material (CC BY-NC; CC BY-NC-ND for locally produced renders) may be used locally for development
+  and listening.
+- It is never committed or shipped. The repository records its origin (DOI/URL, member path, window, checksum) so the
+  local copy can be rebuilt. This keeps the committed tree free of a field-of-use restriction for downstream users.
+- A local-only source is used only when no less restrictively licensed source of equal or better match exists.
+  "Match" is compared within one evidence tier: real recordings against real recordings, NAM captures against
+  captures. A capture never displaces a real recording, and a real recording never displaces a capture.
+- Sources with no licence (all rights reserved) stay excluded. Non-commercial status grants nothing there.
+
+Per-source verdicts and the resulting choice per voicing: `research/G-010-reference-gap-research.md` §G.
+
+### D-001ab - high-band shaper in each preamp stage (G-010 round 5)
+
+After round 4 (11/12) the listener said brightness was the cue. In the 1 s onset windows played, the real amp had 10-17 dB more energy above 2 kHz for the low-drive presets, and the reference was brighter in 9 of 12 pairs. Each `PreampStage` now splits its input at 1.2 kHz (one-pole), shapes the high part with gain `6 * drive^2` through the stage shaper, and adds it at weight 0.1 before the output gain (multiband waveshaping after Fernandez-Cid & Quiros 2001 as described in Pakarinen & Yeh 2009; the `drive^2` law keeps the clean presets almost untouched). Onset-window mean absolute gap above 2 kHz, over the 14 reference pairs: 7.0 dB to 4.5 dB; 12 s band gaps: 2-4 kHz -5.6 to -2.3 dB, 4-8 kHz -8.2 to -3.3 dB, 8-16 kHz -7.8 to -0.4 dB. Remaining: Southern Rock, Classic Rock Crunch, Funeral March and Crunch Rhythm still 9-11 dB short in the onset window (the JVM OD1 channel at gain 5 is hotter than the Plexi/5150 presets at their knob settings, so this is partly a reference mismatch, not a fixable constant); Thrash Attack and Bay Area Lead are 4-6 dB too bright. Larger weights or fixed (drive-independent) gain overshoot the clean presets by 20-28 dB. Loudness moved by less than 0.4 dB (spread 0.19 dB); 31/31 ctest. Mull not re-run.
+
+### D-001ad - output loudness left as is; consider a limiter later (human decision, 2026-11-05)
+
+The preamp changes (D-001x, D-001z, D-001aa, D-001ab) raised the crest factor to about 10 dB, so at the frozen T-005 peak bound the voicings are about 6.7 dB quieter on music than at round 3 at the same master setting. A trial of master range 0 to 2 with preset master 1.4 clipped every factory preset on the bench DI (peaks 0.64-0.93 at master 0.7 became full scale) and was reverted. Decision: leave the loudness as it is. Consider adding an output limiter or soft clipper later so that make-up gain can be used; it would be a new stage and must be listened to before it ships, because it changes the character the blind rounds scored. Not done.
+
+### D-001af - repository licence is Apache-2.0 (owner decision, 2026-11-05)
+
+The owner confirmed the source is Apache-2.0. `LICENSE` is now the Apache License 2.0 text (it was AGPL-3.0 on this branch) and the README licence section says so. This resolves the open question in `research/G-010-reference-gap-research.md` §F. It does not change what a compiled binary must follow: JUCE 8 modules are AGPL-3.0 or commercial, so a distributed plugin binary falls under one of those; this is stated in the README. `plan/ASSUMPTIONS.md` A-009 (which amended the licence to AGPL-3.0) is superseded by this entry. GPL-3.0 data (research §A3) is still not vendored: whether Apache-2.0 source may carry GPL-3.0 audio data was not decided here.
+
+### D-001ag - Mull installed from the GitHub release package
+
+Every mutation run on PR 24 failed in "Install Mull + clang 19": the Cloudsmith apt repository for `mull-stable` answered `402 Payment Required` (run 42070234136, 2026-11-05), so `mutation-gate` failed without testing anything. `.github/workflows/mutation.yml` now installs the same Mull 0.34 line from its GitHub release (`0.34.2`, `Mull-19-...-LLVM-19.1.1-ubuntu-amd64-24.04.deb`, built against the LLVM 19.1.1 that Ubuntu 24.04's `clang-19` ships). The package layout (`mull-runner-19`, `/usr/lib/mull-ir-frontend-19`) was not verified locally; the next CI run will show. No mutation result exists for D-001x to D-001ae until it passes.
+
+### D-001ae - preamp stage reworked after PR 24 CI failed on T-050 and T-051
+
+CI on PR 24 had failed since the preamp changes: on windows-latest and macos-latest the bench gate reported `T-051 latency High: reported=4 measured=6` and `T-050 Frost/High 23.65 % vs 15 % budget`, 63-69 % over the stored baseline (run 42057575373). Both reproduced locally. Bisecting with switches showed the tanh-based high-band path (D-001ab) caused the latency shift (its small-signal gain moved the impulse peak) and, with the bias path (D-001aa), three transcendental calls per sample per stage caused the CPU. Changes in `Source/DSP/Preamp.h`:
+
+- the high-band path keeps only what exceeds a dead zone of 1.0 (`z = 6 * drive^2 * highpassed input`), soft-limited to +/-1 and added at weight 0.25. No small-signal gain, no transcendental call, bounded (an unbounded dead zone broke the frozen T-005 peak bound);
+- the bias term `shape(b)` is refreshed every 8 samples (the bias follows a 1-50 ms envelope);
+- the shaper's `tanh` is a 7/6 Pade approximation, within 1e-4 of `tanh` for all inputs.
+
+Local results (this machine, relative numbers only): High-mode latency reported 4 / measured 4; High-mode CPU mean 18.1 % against 19.0 % for the pre-D-001x preamp and 36.8 % before this change. 31/31 ctest at the unchanged trims; voicing spread 0.35 dB. Onset-window mean absolute gap above 2 kHz to the references 4.5 dB (round 5 engine: 4.5), crest 10.2 dB, 80-250 Hz gap -1.2 dB. CI results for the Windows and macOS runners are not in yet. The engine differs slightly from the one rounds 5 scored.
+
+Follow-up to D-001ae (same day): CI run 42083982747 on commit 8d8dbea passed T-051 (High reported 4 / measured 4) and macOS, but windows-latest Frost/High was 15.34 % against the 15.0 % budget (baseline 14.51 %). The preamp's emphasis filters now use an inline transposed-direct-form-II biquad (`InlineBiquad`, same coefficients as before) instead of `juce::dsp::IIR::Filter::processSample`, the shaper skips the cubic term when `tanhBlend` is 1 (Frost) and the cubic branch is branch-free. Output is unchanged (same onset and band gaps to the references); local High-mode CPU mean 16.0 % (18.2 % before, 19.0 % for the pre-D-001x preamp); 31/31 ctest including `no_audio_alloc` and `retune_equivalence`.
+
+### D-001ah - exception to D-001ac: round-6 listener bundle committed (owner instruction, 2026-11-05)
+
+The owner asked for the round-6 listening files to be pushed to the repository. They are derived from CC BY-NC 4.0 recordings (Blues Jr, Mark V). Only the 1 s listener pairs and their zip are committed, with `listening-work/G-010/round-006/NOTICE.md` carrying the attribution and the non-commercial restriction. The full-length references, the DIs, the candidate renders and the answer key stay local (`.gitignore`). Everything else in D-001ac stands.
+
+### D-001ai - mutation job timeout raised to 355 minutes
+
+With Mull installed again (D-001ag), the full mutation run on 9db05cc (run 42091872467) was cancelled by the 240-minute job limit: 42 minutes to install and build, then more than 198 minutes of mutants with no result. The earlier measurement of about 150 minutes for a full run predates the D-001x to D-001ae additions to `Preamp.h`, which add mutable code to the file that is mutated most. The limit is now 355 minutes, just under the 360-minute maximum of GitHub-hosted runners. If that is not enough, the run needs to be sharded by file (not done). Three redundant mutation runs on later commits were cancelled so only one run is spent.
+
+### D-001aj - no mutation score after the preamp changes; sharding proposed
+
+The two mutation runs that got past the Mull install (42091872467 cancelled at the 240-minute limit; 42128245981 lost its hosted runner after 3 h 40 min) produced no T-070 score. D-001ai (355-minute limit) did not help, because the second run failed by runner loss, not by time. T-070 for D-001x to D-001ae is therefore unchecked. Detail and the proposed sharding, memory caps and always-upload fix are in `reviews/MUTATION.md`.
+
+### D-001ak - mutation testing sharded by source file, with process caps
+
+Follows D-001aj. `.github/workflows/mutation.yml` now has a `scope` job (decides full, incremental or not-applicable and lists the files), a `mutate` matrix job with one shard per mutated file (11 files, those in `reviews/mutation-baseline.json`) and a `mutation-gate` job that downloads the shard reports and scores them together (`tools/ci/mull_score.py` accepts several reports). Each shard installs Mull, builds the instrumented tests, mutates only its own file, runs 3 workers, caps every process at 6 GB of address space and 20 CPU minutes (`ulimit -v 6291456`, `ulimit -t 1200`) and uploads its report even when it fails. A shard that fails or loses its runner fails the gate, so a lost shard can no longer hide behind the others. Files without mutants (Voicings.h, UserIRLoader.h, PresetManager.h) get no shard. The floor (75 %, at least 150 mutants) and the incremental per-file baseline are unchanged. Not yet run in CI when this entry was written.
+
+Follow-up to D-001ak (2026-11-06): in the first sharded run the `Install Mull + clang 19` step hung for more than 17 minutes in two of the 11 shards (PowerAmp.h twice, NoiseGate.h once; the other shards take about 20 seconds). The step now has a 20-minute timeout, `curl --connect-timeout 20 --max-time 300` and apt retries and timeouts. The cause of the hang was not found.
+
+Second follow-up to D-001ak (2026-11-06): after the 20-minute step timeout, 4 of 11 shards in run 42192583258 still failed on the Mull install (the install hung in 6 of 22 shard starts that day, and the one lost-runner failure of D-001aj may have been the same kind of runner trouble, not a runaway mutant). The install is now three attempts of at most 7 minutes each, killing any stuck `apt-get` or `dpkg` between attempts, inside a 25-minute step limit.
+
+### D-001al - T-070 result after the preamp changes: 76.0 %, Preamp.h at 56.0 %
+
+First complete mutation result for the code after D-001x to D-001ae (run 42196121659, sharded per D-001ak): project score 76.0 % (206/271), above the 75 % floor, gate passed. `Preamp.h` scored 56.0 % (28/50) against its recorded 81.2 %; all 22 survivors are in the code added since (fast tanh, high-band path, bias envelope, blend shortcut, filter-coefficient formulas), and none looks equivalent. The floor passes only because the other ten files hold. This does not meet the plan's intent that survivors are killed by tests or justified in writing, so S-MUTATE is not closed: the new reference tests proposed in `reviews/MUTATION.md` still have to be written (they are new tests, not changes to frozen ones), and `reviews/mutation-baseline.json` is deliberately left at 81.2 % for `Preamp.h`.
+
+### D-001am - preamp_reference test added to kill the Preamp.h survivors
+
+Follows D-001al. New non-frozen test `preamp_reference` (`tests/MutationTests.cpp`), added to ctest and to the Mull test list. 32/32 ctest. Twelve of the 22 Preamp.h survivors were re-created by hand and killed; three are expected to remain as equivalent mutants (justified in `reviews/MUTATION.md`). The sharded mutation workflow has to be re-run to get the real score; until then T-070 for `Preamp.h` is 56.0 % (D-001al) and S-MUTATE stays open.
+
+### D-001an - T-070 met after the preamp changes: project 82.7 %, Preamp.h 92.0 %
+
+Sharded run 42317849477 (commit 6a20f02, with the `preamp_reference` test of D-001am): 224/271 mutants killed (82.7 %), `mutation-gate` passed, every file at or above its baseline. `Preamp.h` 92.0 % (46/50); its four survivors are one loop-bound mutant (covered by the sanitizer job) and three equivalent mutants, justified in `reviews/MUTATION.md`. This closes D-001aj and D-001al. Two CI problems seen in the same runs and handled here: (1) the `lint-ci` job failed its ledger check because the workflow uses `sleep` and `ulimit`; both, with `timeout` and `pkill`, are now in `research/COMMAND_VERIFICATION.md` (verified locally with `lint_ci.py --ledger`; this commit is `[skip ci]`, so CI has not re-run it); (2) the Mull install step failed outright in one shard (CabIR.h) after all three bounded attempts hung, and passed on rerun. The cause of the install hangs is still unknown; it has happened in 7 of 33 shard starts.
+
+### D-001ao - mutation baseline raised for Preamp.h only
+
+`reviews/mutation-baseline.json` was updated from the full run 42317849477 (D-001an), taking the higher of the old and new score per file: `Preamp.h` 81.2 to 92.0. The other files keep their old baselines, including `CabIR.h` (62.5; this run 60.0) and `PowerAmp.h` (90.0; this run 86.7), which are inside the 5-point tolerance; the baseline is a ratchet and is not lowered by a noisier run. From now on an incremental run that changes `Preamp.h` must score at least 87.0 %.
