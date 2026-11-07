@@ -132,3 +132,15 @@ Project score 76.0 % (206 of 271 mutants killed), floor 75 %, 11 percentage poin
 By mutator: sub to add 7, div to mul 4, mul to div 4, add to sub 1, and one each of gt to le, gt to ge, post-inc to post-dec, eq to ne, ge to gt, ge to lt.
 
 Unlike the survivors recorded earlier (loop bounds, hysteresis edges), these are not equivalent mutants: each changes the sound or the cost, and a reference test would kill them. Proposed tests, none written yet: (1) `fastTanh` against `std::tanh` on a grid (bound 1e-4); (2) a stage test with a high-level 3 kHz tone checking that the high-band term raises the 3 kHz level and that a 100 Hz tone gets almost none; (3) an envelope test: a burst then silence, checking attack (1 ms) and release (50 ms) times and that the output has no DC after the DC block; (4) Frost (blend 1.0) against the shaper with an explicit cubic of zero, and a blend of 0.5 against the formula; (5) a frequency-response check of the high-band split at 1.2 kHz.
+
+## 2026-11-07 - new test `preamp_reference` (ctest 32/32) and local mutant check
+
+`tests/MutationTests.cpp` gains `preamp_reference`, registered in `tests/CMakeLists.txt` and added to the Mull test list in the workflow. It restates the stage independently (bias, high band, emphasis shelves, DC block, time constants, all constants written out as literals) and compares a loud two-tone burst followed by silence, for three voicings, both stages and two drive settings, within 1e-3; it also checks that the test signal makes the high band and the dynamic bias matter, that no DC is left, that silence stays silent and that `fastTanh` is within 1e-4 of `tanh`. The stage matched its documented chain on the first run.
+
+Twelve of the 22 survivors were re-created by hand and every one is now killed (`fastTanh` coefficient and division; envelope attack and release formulas; the high-band corner; the DC block; the 8-sample refresh condition; the blend term; the attack/release comparison; the high-band gain and dead-zone arithmetic; the Frost shortcut). The Mull result for the remaining ones comes from the next sharded run.
+
+Survivors expected to stay, equivalent mutants:
+
+- `a > env` to `a >= env` (the attack/release choice): the two branches differ only when `a == env`, where `a - env` is zero.
+- `biasTick++` to `biasTick--`: the refresh still happens every eighth sample, starting with the first, so the output is identical.
+- `tanhBlend >= 0.999f` to `> 0.999f`: no voicing has a blend of exactly 0.999.

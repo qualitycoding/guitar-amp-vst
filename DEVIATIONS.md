@@ -402,3 +402,7 @@ Second follow-up to D-001ak (2026-11-06): after the 20-minute step timeout, 4 of
 ### D-001al - T-070 result after the preamp changes: 76.0 %, Preamp.h at 56.0 %
 
 First complete mutation result for the code after D-001x to D-001ae (run 42196121659, sharded per D-001ak): project score 76.0 % (206/271), above the 75 % floor, gate passed. `Preamp.h` scored 56.0 % (28/50) against its recorded 81.2 %; all 22 survivors are in the code added since (fast tanh, high-band path, bias envelope, blend shortcut, filter-coefficient formulas), and none looks equivalent. The floor passes only because the other ten files hold. This does not meet the plan's intent that survivors are killed by tests or justified in writing, so S-MUTATE is not closed: the new reference tests proposed in `reviews/MUTATION.md` still have to be written (they are new tests, not changes to frozen ones), and `reviews/mutation-baseline.json` is deliberately left at 81.2 % for `Preamp.h`.
+
+### D-001am - preamp_reference test added to kill the Preamp.h survivors
+
+Follows D-001al. New non-frozen test `preamp_reference` (`tests/MutationTests.cpp`), added to ctest and to the Mull test list. 32/32 ctest. Twelve of the 22 Preamp.h survivors were re-created by hand and killed; three are expected to remain as equivalent mutants (justified in `reviews/MUTATION.md`). The sharded mutation workflow has to be re-run to get the real score; until then T-070 for `Preamp.h` is 56.0 % (D-001al) and S-MUTATE stays open.

@@ -161,7 +161,7 @@ jobs:
               skeleton param_inventory param_ranges sine_sanity harmonics preset_roundtrip \
               state_restore smoothing gestures ir_loading \
               boost_reference gate_reference tonestack_reference poweramp_reference posteq_reference biquad_design retune_equivalence \
-              cabir_selection userir_loader preset_list 2>&1 | tee mull.log
+              cabir_selection userir_loader preset_list preamp_reference 2>&1 | tee mull.log
 
       - name: Upload Mull report
         if: always()
